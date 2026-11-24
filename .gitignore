@@ -14,6 +14,7 @@ wheels/
 # Local environment & runtime data
 .env
 data/
+backups/
 *.db
 *.db-wal
 *.db-shm

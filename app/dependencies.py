@@ -10,6 +10,7 @@ from content_studio.database.repositories import (
     ArtifactRepository,
     ChannelGuidelineRepository,
     CompetitorRepository,
+    EvaluationRepository,
     FactCheckRepository,
     ProjectRepository,
     ResearchRepository,
@@ -19,6 +20,7 @@ from content_studio.database.repositories import (
     UsageRepository,
 )
 from content_studio.database.session import get_db_session
+from content_studio.evaluation import EvaluationService
 from content_studio.providers.image import BaseImageProvider, LocalSVGImageProvider
 from content_studio.providers.llm import ModelRouter
 from content_studio.providers.search import BaseSearchProvider, build_search_provider
@@ -123,6 +125,12 @@ def get_scene_repository(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> SceneRepository:
     return SceneRepository(session)
+
+
+def get_evaluation_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> EvaluationRepository:
+    return EvaluationRepository(session)
 
 
 def get_artifact_service(
@@ -401,6 +409,32 @@ def get_production_service(
         model_router=model_router,
         approval_service=approval_service,
         agent_run_repo=agent_run_repo,
+    )
+
+
+def get_evaluation_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    research_repo: Annotated[ResearchRepository, Depends(get_research_repository)],
+    fact_check_repo: Annotated[FactCheckRepository, Depends(get_fact_check_repository)],
+    script_repo: Annotated[ScriptRepository, Depends(get_script_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    usage_repo: Annotated[UsageRepository, Depends(get_usage_repository)],
+    evaluation_repo: Annotated[EvaluationRepository, Depends(get_evaluation_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+) -> EvaluationService:
+    return EvaluationService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        research_repo=research_repo,
+        fact_check_repo=fact_check_repo,
+        script_repo=script_repo,
+        scene_repo=scene_repo,
+        usage_repo=usage_repo,
+        evaluation_repo=evaluation_repo,
+        artifact_service=artifact_service,
+        model_router=model_router,
     )
 
 

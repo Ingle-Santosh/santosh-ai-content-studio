@@ -9,6 +9,13 @@ from content_studio.services.artifact_service import (
 )
 from content_studio.services.asset_qa_service import AssetQAService
 from content_studio.services.asset_service import AssetGenerationService
+from content_studio.services.backup_service import (
+    BackupSummary,
+    BackupVerificationResult,
+    create_backup,
+    restore_backup,
+    verify_backup,
+)
 from content_studio.services.competitor_service import CompetitorService
 from content_studio.services.fact_check_service import FactCheckService
 from content_studio.services.guideline_service import (
@@ -48,6 +55,8 @@ __all__ = [
     "ArtifactService",
     "AssetGenerationService",
     "AssetQAService",
+    "BackupSummary",
+    "BackupVerificationResult",
     "ChannelGuidelineService",
     "CompetitorService",
     "DEFAULT_CHANNEL_NAME",
@@ -69,8 +78,11 @@ __all__ = [
     "WorkflowGateError",
     "YouTubeStrategyService",
     "compute_url_hash",
+    "create_backup",
     "extract_domain",
     "format_timestamp",
     "normalize_url",
+    "restore_backup",
     "validate_script_sections",
+    "verify_backup",
 ]

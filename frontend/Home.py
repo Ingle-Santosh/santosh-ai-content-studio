@@ -23,6 +23,35 @@ if st.sidebar.button("Check Backend Health"):
     except StudioAPIError as exc:
         st.sidebar.error(str(exc))
 
+try:
+    metrics = client.get_system_metrics()
+except StudioAPIError:
+    metrics = None
+
+if metrics is not None:
+    by_status = metrics.get("projects_by_status") or {}
+    in_progress = sum(
+        by_status.get(k, 0)
+        for k in ("RESEARCHING", "SCRIPTING", "STORYBOARDING", "GENERATING_ASSETS")
+    )
+    awaiting_review = by_status.get("AWAITING_APPROVAL", 0)
+    completed = by_status.get("COMPLETED", 0)
+    kpi_cols = st.columns(6)
+    kpi_cols[0].metric("Total Projects", metrics.get("total_projects", 0))
+    kpi_cols[1].metric("In Progress", in_progress)
+    kpi_cols[2].metric("Awaiting Approval", awaiting_review)
+    kpi_cols[3].metric("Completed", completed)
+    kpi_cols[4].metric("Pending Approvals", metrics.get("pending_approvals", 0))
+    kpi_cols[5].metric(
+        "LLM Spend (USD)",
+        f"${metrics.get('total_estimated_cost_usd', 0.0):.4f}",
+        help=(
+            f"{metrics.get('total_llm_calls', 0)} calls · "
+            f"{metrics.get('total_tokens', 0):,} tokens · "
+            f"avg {metrics.get('avg_llm_latency_ms', 0.0):.0f} ms"
+        ),
+    )
+
 st.divider()
 
 col1, col2 = st.columns([1, 1])

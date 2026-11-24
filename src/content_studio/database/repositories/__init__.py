@@ -2,6 +2,7 @@ from content_studio.database.repositories.agent_run_repository import AgentRunRe
 from content_studio.database.repositories.approval_repository import ApprovalRepository
 from content_studio.database.repositories.artifact_repository import ArtifactRepository
 from content_studio.database.repositories.competitor_repository import CompetitorRepository
+from content_studio.database.repositories.evaluation_repository import EvaluationRepository
 from content_studio.database.repositories.fact_check_repository import FactCheckRepository
 from content_studio.database.repositories.guideline_repository import ChannelGuidelineRepository
 from content_studio.database.repositories.project_repository import ProjectRepository
@@ -17,6 +18,7 @@ __all__ = [
     "ArtifactRepository",
     "ChannelGuidelineRepository",
     "CompetitorRepository",
+    "EvaluationRepository",
     "FactCheckRepository",
     "ProjectRepository",
     "ResearchRepository",

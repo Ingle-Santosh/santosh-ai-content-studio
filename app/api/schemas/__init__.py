@@ -27,6 +27,13 @@ from app.api.schemas.competitor import (
     CompetitorVideoListResponse,
     CompetitorVideoResponse,
 )
+from app.api.schemas.evaluation import (
+    EvaluationListResponse,
+    EvaluationRecordResponse,
+    EvaluationRunRequest,
+    EvaluationRunResponse,
+    SystemMetricsResponse,
+)
 from app.api.schemas.fact_check import (
     ClaimListResponse,
     ClaimResponse,
@@ -114,6 +121,10 @@ __all__ = [
     "CompetitorRunResponse",
     "CompetitorVideoListResponse",
     "CompetitorVideoResponse",
+    "EvaluationListResponse",
+    "EvaluationRecordResponse",
+    "EvaluationRunRequest",
+    "EvaluationRunResponse",
     "FactCheckRunRequest",
     "FactCheckRunResponse",
     "HealthResponse",
@@ -144,6 +155,7 @@ __all__ = [
     "SourceResponse",
     "StoryboardGenerateRequest",
     "StoryboardGenerateResponse",
+    "SystemMetricsResponse",
     "UsageLogResponse",
     "WorkflowResumeRequest",
     "WorkflowRunListResponse",

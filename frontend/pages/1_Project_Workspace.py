@@ -47,6 +47,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
     tab_storyboard,
     tab_assets,
     tab_production,
+    tab_evaluation,
     tab_artifacts,
     tab_add,
     tab_approvals,
@@ -60,6 +61,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
         "Storyboard",
         "Assets",
         "Production",
+        "Evaluation",
         "Artifacts Browser",
         "Add Artifact",
         "Approvals",
@@ -588,6 +590,62 @@ with tab_production:
             )
         except StudioAPIError as exc:
             st.error(str(exc))
+
+with tab_evaluation:
+    st.subheader("7-Dimension Quality Evaluation & Telemetry")
+    st.caption(
+        "Repeatable weighted rubric across factual accuracy, research, script, teaching clarity, "
+        "visuals, channel guidelines, and production readiness. Human review remains mandatory."
+    )
+    with st.form("run_evaluation_form"):
+        use_llm_judge = st.checkbox(
+            "Include LLM-as-a-Judge blend for Script Quality & Teaching Clarity",
+            value=False,
+        )
+        if st.form_submit_button("Run Quality Evaluation", type="primary"):
+            with st.spinner("Evaluating project artifacts and aggregating model telemetry..."):
+                try:
+                    ev = client.run_evaluation(project_id, use_llm_judge=use_llm_judge)
+                    st.success(
+                        f"Overall Weighted Score: {ev['overall_score']:.2f}/100 "
+                        f"(evaluator: `{ev['evaluator']}`, human review required: "
+                        f"`{ev['human_review_required']}`)"
+                    )
+                    st.info(ev["feedback"])
+                    st.json(ev["dimension_scores"])
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    st.markdown("### Evaluation History")
+    try:
+        evaluations = client.list_evaluations(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        evaluations = []
+
+    if not evaluations:
+        st.caption("No evaluations recorded yet. Run an evaluation above.")
+    else:
+        for rec in evaluations:
+            lc = rec.get("latency_cost_summary_json") or {}
+            header = (
+                f"Score: {rec['overall_score']:.2f}/100 · `{rec['evaluator']}` · "
+                f"{rec['evaluated_at']}"
+            )
+            with st.expander(header, expanded=(rec["id"] == evaluations[0]["id"])):
+                st.write(f"**Feedback**: {rec['feedback']}")
+                e_cols = st.columns(4)
+                e_cols[0].metric("LLM Calls", lc.get("total_llm_calls", 0))
+                e_cols[1].metric(
+                    "Total Tokens",
+                    lc.get("total_prompt_tokens", 0) + lc.get("total_completion_tokens", 0),
+                )
+                e_cols[2].metric(
+                    "Estimated Cost",
+                    f"${lc.get('total_estimated_cost_usd', 0.0):.6f}",
+                )
+                e_cols[3].metric("Avg Latency", f"{lc.get('avg_latency_ms', 0.0):.1f} ms")
+                st.json(rec.get("dimension_scores_json", {}))
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)
