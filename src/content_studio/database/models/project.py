@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from content_studio.database.models.approval import Approval
     from content_studio.database.models.artifact import Artifact
     from content_studio.database.models.llm_usage_log import LLMUsageLog
+    from content_studio.database.models.research_document import ResearchDocument
+    from content_studio.database.models.research_finding import ResearchFinding
+    from content_studio.database.models.source import Source
     from content_studio.database.models.workflow_run import WorkflowRun
 
 
@@ -54,5 +57,14 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     agent_runs: Mapped[list["AgentRun"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    sources: Mapped[list["Source"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    research_documents: Mapped[list["ResearchDocument"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    research_findings: Mapped[list["ResearchFinding"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

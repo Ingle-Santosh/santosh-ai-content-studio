@@ -29,6 +29,14 @@ from app.api.schemas.project import (
     ProjectResponse,
     ProjectUpdateRequest,
 )
+from app.api.schemas.research import (
+    ResearchFindingListResponse,
+    ResearchFindingResponse,
+    ResearchRunRequest,
+    ResearchRunResponse,
+    SourceListResponse,
+    SourceResponse,
+)
 
 __all__ = [
     "ApprovalCreateRequest",
@@ -51,5 +59,11 @@ __all__ = [
     "ProjectResponse",
     "ProjectUpdateRequest",
     "ProjectUsageSummaryResponse",
+    "ResearchFindingListResponse",
+    "ResearchFindingResponse",
+    "ResearchRunRequest",
+    "ResearchRunResponse",
+    "SourceListResponse",
+    "SourceResponse",
     "UsageLogResponse",
 ]

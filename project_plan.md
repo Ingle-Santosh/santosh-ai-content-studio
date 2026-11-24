@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 3 Complete / Ready for Milestone 4  
+**Status:** Development – Milestone 4 Complete / Ready for Milestone 5  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -470,9 +470,9 @@ Use SQLite initially via `aiosqlite` with async SQLAlchemy 2.x and Alembic migra
 | `approvals` | Human approval gate records, decisions, and reviewer comments | M2 (Implemented) |
 | `channel_guidelines` | Reusable, configurable channel preferences and brand rules | M2 (Implemented) |
 | `agent_runs` | Per-agent/node execution audit trail linked to `workflow_runs` | M2 (Implemented) |
-| `sources` | Research source metadata and deduplication keys | M4 |
-| `research_documents` | Extracted webpage content metadata / references | M4 |
-| `research_findings` | Structured research findings linked to sources | M4 |
+| `sources` | Research source metadata and deduplication keys | M4 (Implemented) |
+| `research_documents` | Extracted webpage content metadata / references | M4 (Implemented) |
+| `research_findings` | Structured research findings linked to sources | M4 (Implemented) |
 | `claims` | Factual claims requiring verification | M5 |
 | `claim_sources` | Claim-to-source evidence mapping | M5 |
 | `competitor_videos` | Public YouTube competitor metadata and content-gap notes | M5 |
@@ -766,15 +766,14 @@ Tasks:
 
 Tasks:
 
-- Add research tables (`sources`, `research_documents`, `research_findings`) via Alembic migration.
-- Implement search provider interface.
-- Implement webpage extraction (`trafilatura`).
-- Store source metadata.
-- Extract research findings.
-- Build source deduplication.
-- Implement research report schemas.
-- Add source traceability.
-- Add research tab to the Streamlit Project Workspace.
+- [x] Add research tables (`sources`, `research_documents`, `research_findings`) via Alembic migration `0003_research_engine.py`.
+- [x] Implement search provider interface (`BaseSearchProvider`, zero-key `DuckDuckGoSearchProvider`, optional `TavilySearchProvider`).
+- [x] Implement async webpage extraction (`WebExtractor` using `trafilatura` with HTML fallback and error recording).
+- [x] Store source metadata and full extracted text outside DB in `01_research/sources/`.
+- [x] Build URL canonicalization (`url_hash`) and content-checksum (`content_checksum_sha256`) deduplication.
+- [x] Implement structured `ResearchReport` / `ResearchSynthesisOutput` Pydantic contracts and externalized prompt templates (`prompts/research/`).
+- [x] Enforce strict source traceability (strip fabricated URLs and drop ungrounded findings) and save versioned report artifacts (`research_report.json`, `research_report.md`).
+- [x] Add Research API (`/api/projects/{project_id}/research/...`) and Research tab in Streamlit Project Workspace.
 
 **Acceptance criteria:**
 
@@ -1153,12 +1152,13 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 3 is complete. The next milestone is **Milestone 4 – Research Engine**.
+Milestone 4 is complete. The next milestone is **Milestone 5 – Fact Checking and Competitor Analysis**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
 - [x] Milestone 3 – Hybrid LLM & Provider Layer (`BaseLLMProvider`, `OllamaProvider`, `GeminiProvider`, `ModelRouter`, structured output repair, budget guardrails, `/api/llm/status` & `/api/projects/{project_id}/usage`).
-- [ ] Begin Milestone 4 – Research Engine (research tables migration, search provider interface, webpage extraction via `trafilatura`, deduplication, structured `ResearchReport`, source traceability, and Research tab in Streamlit).
+- [x] Milestone 4 – Research Engine (`0003_research_engine`, `DuckDuckGoSearchProvider`/`TavilySearchProvider`, `WebExtractor` with `trafilatura`, URL & checksum deduplication, grounded `ResearchReport` via `ModelRouter`, Research API & Workspace tab).
+- [ ] Begin Milestone 5 – Fact Checking & Competitor Analysis (`claims`, `claim_sources`, `competitor_videos` migration, claim extraction & evidence-based fact checker, public YouTube competitor metadata & content-gap report, research approval gate).
 
 ### Initial Commands
 

@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     LLM_RETRY_BASE_DELAY_SECONDS: float = Field(default=0.5, ge=0.0)
     LLM_STRUCTURED_MAX_REPAIRS: int = Field(default=2, ge=0, le=4)
 
+    # Web Research Providers (DuckDuckGo requires zero API keys by default)
+    SEARCH_PROVIDER: str = "duckduckgo"
+    SEARCH_API_KEY: str | None = None
+    RESEARCH_FETCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0.0)
+    RESEARCH_MAX_RESULTS_PER_QUERY: int = Field(default=5, ge=1, le=20)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

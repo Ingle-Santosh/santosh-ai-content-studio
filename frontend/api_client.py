@@ -181,3 +181,37 @@ class StudioAPIClient:
 
     def get_project_usage(self, project_id: str) -> dict[str, Any]:
         return dict(self._request("GET", f"/api/projects/{project_id}/usage"))
+
+    # Research Engine
+    def run_research(
+        self,
+        project_id: str,
+        *,
+        queries: list[str] | None = None,
+        seed_urls: list[str] | None = None,
+        max_results_per_query: int = 5,
+        synthesize_with_llm: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "queries": queries,
+            "seed_urls": seed_urls,
+            "max_results_per_query": max_results_per_query,
+            "synthesize_with_llm": synthesize_with_llm,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/research/run", json=body))
+
+    def list_research_sources(
+        self,
+        project_id: str,
+        *,
+        status: str | None = None,
+    ) -> list[dict[str, Any]]:
+        params = {"status": status} if status else None
+        payload = self._request(
+            "GET", f"/api/projects/{project_id}/research/sources", params=params
+        )
+        return list(payload.get("items", []))
+
+    def list_research_findings(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/research/findings")
+        return list(payload.get("items", []))
