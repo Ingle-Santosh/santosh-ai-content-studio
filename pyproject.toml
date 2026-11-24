@@ -1,0 +1,41 @@
+[project]
+name = "santosh-ai-content-studio"
+version = "0.1.0"
+description = "Local-first AI Content Studio for technical video production"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "alembic>=1.20.1",
+    "fastapi>=0.165.0",
+    "httpx>=0.28.1",
+    "pydantic>=2.14.4",
+    "pydantic-settings>=2.16.3",
+    "sqlalchemy[asyncio]>=2.1.9",
+    "streamlit>=1.67.0",
+    "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "ruff>=0.17.6",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "app", "frontend", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "BLE"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "content_studio", "frontend"]
