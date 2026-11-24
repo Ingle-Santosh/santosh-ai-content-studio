@@ -15,6 +15,14 @@ from content_studio.services.guideline_service import (
     ChannelGuidelineService,
 )
 from content_studio.services.research_service import ResearchService
+from content_studio.services.script_service import (
+    ResearchNotApprovedError,
+    ScriptNotFoundError,
+    ScriptwriterService,
+    WorkflowGateError,
+)
+from content_studio.services.script_validator import REQUIRED_SECTIONS, validate_script_sections
+from content_studio.services.storyboard_service import ScriptNotApprovedError, StoryboardService
 from content_studio.services.web_extractor import (
     ExtractedPage,
     WebExtractor,
@@ -37,10 +45,18 @@ __all__ = [
     "ExtractedPage",
     "FactCheckService",
     "ProjectNotFoundError",
+    "REQUIRED_SECTIONS",
+    "ResearchNotApprovedError",
     "ResearchService",
     "ResourceNotFoundError",
+    "ScriptNotApprovedError",
+    "ScriptNotFoundError",
+    "ScriptwriterService",
+    "StoryboardService",
     "WebExtractor",
+    "WorkflowGateError",
     "compute_url_hash",
     "extract_domain",
     "normalize_url",
+    "validate_script_sections",
 ]

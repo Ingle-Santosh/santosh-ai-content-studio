@@ -36,11 +36,22 @@ meta_cols[1].metric("Stage", project.get("current_stage") or "—")
 meta_cols[2].metric("Budget (USD)", f"${project.get('budget_usd', 0.0):.2f}")
 meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 
-tab_research, tab_competitors, tab_fact_check, tab_artifacts, tab_add, tab_approvals = st.tabs(
+(
+    tab_research,
+    tab_competitors,
+    tab_fact_check,
+    tab_script,
+    tab_storyboard,
+    tab_artifacts,
+    tab_add,
+    tab_approvals,
+) = st.tabs(
     [
         "Research",
         "Competitors",
         "Fact Checking",
+        "Script",
+        "Storyboard",
         "Artifacts Browser",
         "Add Artifact",
         "Approvals",
@@ -240,6 +251,132 @@ with tab_fact_check:
                 st.caption(f"Rationale: {claim['rationale']}")
                 if claim.get("evidence_summary"):
                     st.warning(claim["evidence_summary"])
+
+with tab_script:
+    st.subheader("Structured Hinglish Scriptwriter")
+    with st.form("generate_script_form"):
+        rev_notes = st.text_area(
+            "Revision / Style Instructions (optional)",
+            height=80,
+            placeholder="e.g., Make the hook punchier and expand the Python demo explanation.",
+        )
+        s_col1, s_col2 = st.columns(2)
+        req_res_approval = s_col1.checkbox("Require Approved Research (Gate 2)", value=False)
+        req_script_approval = s_col2.checkbox("Create Script Approval Gate (Gate 3)", value=True)
+        if st.form_submit_button("Generate Script Version", type="primary"):
+            with st.spinner("Generating structured 9-section script from channel guidelines..."):
+                try:
+                    gen = client.generate_script(
+                        project_id,
+                        revision_notes=rev_notes.strip() or None,
+                        require_approved_research=req_res_approval,
+                        request_script_approval=req_script_approval,
+                    )
+                    st.success(
+                        f"Generated Script v{gen['version_number']} "
+                        f"({gen['word_count']} words, validation score "
+                        f"{gen['validation']['score']}/100)."
+                    )
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    try:
+        script_data = client.get_script(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        script_data = None
+
+    if not script_data or not script_data.get("versions"):
+        st.caption("No script generated yet.")
+    else:
+        st.markdown(
+            f"**{script_data['title']}** — Status: `{script_data['status']}` | "
+            f"Current: `v{script_data['current_version']}` | "
+            f"Approved: `{script_data.get('approved_version') or 'None'}`"
+        )
+        for ver in script_data["versions"]:
+            val = ver.get("validation_report_json") or {}
+            header = (
+                f"v{ver['version_number']} · `{ver['status']}` · {ver['word_count']} words · "
+                f"~{ver['total_estimated_duration_seconds'] // 60}m "
+                f"{ver['total_estimated_duration_seconds'] % 60}s · "
+                f"Score: {val.get('score', 'n/a')}/100"
+            )
+            with st.expander(
+                header, expanded=(ver["version_number"] == script_data["current_version"])
+            ):
+                if val.get("errors"):
+                    st.error("Validation errors: " + " | ".join(val["errors"]))
+                if val.get("warnings"):
+                    st.warning("Warnings: " + " | ".join(val["warnings"]))
+                if ver["status"] != "APPROVED" and st.button(
+                    f"Approve Script v{ver['version_number']}",
+                    key=f"approve_script_v{ver['version_number']}",
+                    type="primary",
+                ):
+                    try:
+                        client.approve_script_version(project_id, ver["version_number"])
+                        st.success(f"Approved Script v{ver['version_number']}.")
+                        st.rerun()
+                    except StudioAPIError as exc:
+                        st.error(str(exc))
+                for sec in ver.get("sections_json", []):
+                    st.markdown(
+                        f"**{sec.get('title')}** (`{sec.get('section_type')}`, "
+                        f"~{sec.get('estimated_duration_seconds', 0)}s)"
+                    )
+                    st.write(sec.get("narration", ""))
+                    if sec.get("visual_instructions"):
+                        st.caption(f"Visuals: {sec['visual_instructions']}")
+
+with tab_storyboard:
+    st.subheader("Scene-by-Scene Storyboard")
+    with st.form("generate_storyboard_form"):
+        req_approved_script = st.checkbox(
+            "Require Approved Script (Gate 3) before storyboarding",
+            value=True,
+        )
+        if st.form_submit_button("Generate Storyboard Scenes", type="primary"):
+            with st.spinner("Breaking approved script into scenes and asset requirements..."):
+                try:
+                    sb = client.generate_storyboard(
+                        project_id,
+                        require_approved_script=req_approved_script,
+                    )
+                    st.success(
+                        f"Generated {sb['total_scenes']} scenes with "
+                        f"{sb['total_asset_requirements']} asset requirement(s)."
+                    )
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    try:
+        scenes = client.list_scenes(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        scenes = []
+
+    if not scenes:
+        st.caption("No storyboard scenes yet. Approve a script version and generate above.")
+    else:
+        for scene in scenes:
+            with st.container(border=True):
+                st.markdown(
+                    f"**Scene {scene['scene_number']}: {scene['title']}** — "
+                    f"`{scene['visual_type']}` (~{scene['estimated_duration_seconds']}s) · "
+                    f"Section: `{scene['related_script_section']}`"
+                )
+                st.write(scene["narration"])
+                if scene.get("on_screen_text"):
+                    st.caption(f"On-screen text: {scene['on_screen_text']}")
+                if scene.get("camera_or_screen_instructions"):
+                    st.caption(f"Camera/Screen: {scene['camera_or_screen_instructions']}")
+                assets = scene.get("asset_requirements_json") or []
+                if assets:
+                    st.caption(
+                        "Assets needed: "
+                        + " | ".join(f"[{a['asset_type']}] {a['title']}" for a in assets)
+                    )
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)

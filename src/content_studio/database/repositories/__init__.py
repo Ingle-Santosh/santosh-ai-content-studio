@@ -7,6 +7,8 @@ from content_studio.database.repositories.guideline_repository import ChannelGui
 from content_studio.database.repositories.project_repository import ProjectRepository
 from content_studio.database.repositories.research_repository import ResearchRepository
 from content_studio.database.repositories.run_repository import RunRepository
+from content_studio.database.repositories.scene_repository import SceneRepository
+from content_studio.database.repositories.script_repository import ScriptRepository
 from content_studio.database.repositories.usage_repository import UsageRepository
 
 __all__ = [
@@ -19,5 +21,7 @@ __all__ = [
     "ProjectRepository",
     "ResearchRepository",
     "RunRepository",
+    "SceneRepository",
+    "ScriptRepository",
     "UsageRepository",
 ]

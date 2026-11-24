@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 5 Complete / Ready for Milestone 6  
+**Status:** Development – Milestone 6 Complete / Ready for Milestone 7  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -476,9 +476,9 @@ Use SQLite initially via `aiosqlite` with async SQLAlchemy 2.x and Alembic migra
 | `claims` | Factual claims requiring verification | M5 (Implemented) |
 | `claim_sources` | Claim-to-source evidence mapping | M5 (Implemented) |
 | `competitor_videos` | Public YouTube competitor metadata and content-gap notes | M5 (Implemented) |
-| `scripts` | Script logical records per project | M6 |
-| `script_versions` | Script revision history and approval linkage | M6 |
-| `scenes` | Storyboard scenes and scene-level visual/asset requirements | M6 |
+| `scripts` | Script logical records per project | M6 (Implemented) |
+| `script_versions` | Script revision history and approval linkage | M6 (Implemented) |
+| `scenes` | Storyboard scenes and scene-level visual/asset requirements | M6 (Implemented) |
 
 ## 8.2 Entity Relationships
 
@@ -804,15 +804,13 @@ Tasks:
 
 Tasks:
 
-- Add script and storyboard tables (`scripts`, `script_versions`, `scenes`) via Alembic migration.
-- Wire `channel_guidelines` into scriptwriter prompt context.
-- Build scriptwriter agent.
-- Implement structured script output.
-- Add script revisions and versioning.
-- Build script validation.
-- Build storyboard agent.
-- Generate scene-level asset requirements.
-- Persist script approval decisions and expose review UI in Approval Center (full graph interrupt/resume wired in Milestone 7).
+- [x] Add script and storyboard tables (`scripts`, `script_versions`, `scenes`) via Alembic migration `0005_scripts_and_storyboard.py`.
+- [x] Wire `channel_guidelines` into scriptwriter prompt context (`prompts/scriptwriter/`).
+- [x] Build scriptwriter service (`ScriptwriterService`) producing structured 9-section Hinglish scripts (`ScriptLLMOutput`, `ScriptSectionItem`) and teleprompter Markdown + JSON artifacts.
+- [x] Add script revisions, manual creator edits, and non-destructive version history (`script_versions`).
+- [x] Build deterministic script validation (`validate_script_sections` checking required sections, pacing, visual cues, code demos, source URLs, and fact-check warnings).
+- [x] Build storyboard service (`StoryboardService`, `prompts/storyboard/`) gated on approved scripts (`ScriptNotApprovedError`) generating ordered scenes and scene-level `asset_requirements`.
+- [x] Persist Gate 3 (`script`) approval decisions and expose Script & Storyboard tabs in Streamlit Project Workspace (full graph interrupt/resume wired in Milestone 7).
 
 **Acceptance criteria:**
 
@@ -1149,14 +1147,15 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 5 is complete. The next milestone is **Milestone 6 – Scriptwriting and Storyboarding**.
+Milestone 6 is complete. The next milestone is **Milestone 7 – LangGraph Orchestration**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
 - [x] Milestone 3 – Hybrid LLM & Provider Layer (`BaseLLMProvider`, `OllamaProvider`, `GeminiProvider`, `ModelRouter`, structured output repair, budget guardrails, `/api/llm/status` & `/api/projects/{project_id}/usage`).
 - [x] Milestone 4 – Research Engine (`0003_research_engine`, `DuckDuckGoSearchProvider`/`TavilySearchProvider`, `WebExtractor` with `trafilatura`, URL & checksum deduplication, grounded `ResearchReport` via `ModelRouter`, Research API & Workspace tab).
 - [x] Milestone 5 – Fact Checking & Competitor Analysis (`0004_fact_check_competitors`, evidence-grounded `FactCheckService`, YouTube public metadata & `CompetitorService`, Gate 2 research approval creation, Fact Checking & Competitors Workspace tabs).
-- [ ] Begin Milestone 6 – Scriptwriting and Storyboarding (`scripts`, `script_versions`, `scenes` migration, Hinglish scriptwriter grounded in `channel_guidelines` + approved research, script validation & versioning, scene-by-scene storyboard + asset requirements, Gate 3 script approval).
+- [x] Milestone 6 – Scriptwriting & Storyboarding (`0005_scripts_and_storyboard`, guideline-driven `ScriptwriterService`, deterministic `validate_script_sections`, Gate 3 script approval, `StoryboardService` with scene-level asset requirements, Script & Storyboard Workspace tabs).
+- [ ] Begin Milestone 7 – LangGraph Orchestration (install `langgraph` + SQLite checkpointer, Topic Strategist node, parallel Research + Competitor fan-out, persistent `checkpoints.db`, human-in-the-loop interrupts & resume across Gates 1–3, workflow history API & Approval Center UI).
 
 ### Initial Commands
 

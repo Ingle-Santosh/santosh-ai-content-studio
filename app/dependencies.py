@@ -14,6 +14,8 @@ from content_studio.database.repositories import (
     ProjectRepository,
     ResearchRepository,
     RunRepository,
+    SceneRepository,
+    ScriptRepository,
     UsageRepository,
 )
 from content_studio.database.session import get_db_session
@@ -27,6 +29,8 @@ from content_studio.services import (
     CompetitorService,
     FactCheckService,
     ResearchService,
+    ScriptwriterService,
+    StoryboardService,
     WebExtractor,
 )
 from content_studio.storage.artifact_store import ArtifactStore
@@ -100,6 +104,18 @@ def get_competitor_repository(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> CompetitorRepository:
     return CompetitorRepository(session)
+
+
+def get_script_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ScriptRepository:
+    return ScriptRepository(session)
+
+
+def get_scene_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> SceneRepository:
+    return SceneRepository(session)
 
 
 def get_artifact_service(
@@ -222,6 +238,56 @@ def get_competitor_service(
         competitor_repo=competitor_repo,
         artifact_service=artifact_service,
         youtube_provider=youtube_provider,
+        model_router=model_router,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_scriptwriter_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    script_repo: Annotated[ScriptRepository, Depends(get_script_repository)],
+    research_repo: Annotated[ResearchRepository, Depends(get_research_repository)],
+    fact_check_repo: Annotated[FactCheckRepository, Depends(get_fact_check_repository)],
+    competitor_repo: Annotated[CompetitorRepository, Depends(get_competitor_repository)],
+    guideline_service: Annotated[ChannelGuidelineService, Depends(get_guideline_service)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> ScriptwriterService:
+    return ScriptwriterService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        script_repo=script_repo,
+        research_repo=research_repo,
+        fact_check_repo=fact_check_repo,
+        competitor_repo=competitor_repo,
+        guideline_service=guideline_service,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        approval_service=approval_service,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_storyboard_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    script_repo: Annotated[ScriptRepository, Depends(get_script_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    guideline_service: Annotated[ChannelGuidelineService, Depends(get_guideline_service)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> StoryboardService:
+    return StoryboardService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        script_repo=script_repo,
+        scene_repo=scene_repo,
+        guideline_service=guideline_service,
+        artifact_service=artifact_service,
         model_router=model_router,
         agent_run_repo=agent_run_repo,
     )
