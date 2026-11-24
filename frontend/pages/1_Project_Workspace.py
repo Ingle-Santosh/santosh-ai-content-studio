@@ -46,6 +46,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
     tab_script,
     tab_storyboard,
     tab_assets,
+    tab_production,
     tab_artifacts,
     tab_add,
     tab_approvals,
@@ -58,6 +59,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
         "Script",
         "Storyboard",
         "Assets",
+        "Production",
         "Artifacts Browser",
         "Add Artifact",
         "Approvals",
@@ -526,6 +528,66 @@ with tab_assets:
                     st.success(f"Stored verified screenshot at `{uploaded['relative_path']}`.")
                 except StudioAPIError as exc:
                     st.error(str(exc))
+
+with tab_production:
+    st.subheader("Production Package & YouTube Strategy (Manual Publishing Only)")
+    p1, p2 = st.columns(2)
+    if p1.button("Generate YouTube Metadata Only"):
+        with st.spinner(
+            "Generating titles, description, chapters, tags, and thumbnail concepts..."
+        ):
+            try:
+                yt = client.generate_youtube_metadata(project_id)
+                st.success(f"Recommended title: {yt['metadata']['recommended_title']}")
+                st.json(yt["metadata"])
+            except StudioAPIError as exc:
+                st.error(str(exc))
+
+    if p2.button("Build Complete Production Package & ZIP", type="primary"):
+        with st.spinner("Assembling editing guide, manifest, YouTube metadata, and ZIP bundle..."):
+            try:
+                pkg = client.build_production_package(
+                    project_id,
+                    include_youtube_metadata=True,
+                    request_final_approval=True,
+                )
+                st.success(
+                    f"Exported production bundle ({pkg['export_zip_file_count']} files) at "
+                    f"`{pkg['export_zip_relative_path']}` — {pkg['manual_publishing_notice']}"
+                )
+            except StudioAPIError as exc:
+                st.error(str(exc))
+
+    st.divider()
+    try:
+        latest_export = client.get_latest_production_export(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        latest_export = None
+
+    if not latest_export:
+        st.caption("No production ZIP bundle exported yet.")
+    else:
+        exp_art = latest_export["export_artifact"]
+        st.markdown(
+            f"**Latest Bundle**: `{exp_art['name']}` (v{exp_art['version']}, "
+            f"{exp_art['size_bytes']} bytes, `{latest_export['publishing_mode']}`)"
+        )
+        st.caption(
+            f"Files included ({len(latest_export['included_files'])}): "
+            + ", ".join(latest_export["included_files"][:12])
+        )
+        try:
+            zip_data = client.download_artifact_bytes(project_id, exp_art["id"])
+            st.download_button(
+                label="Download Production Package (.zip)",
+                data=zip_data,
+                file_name=exp_art["name"],
+                mime="application/zip",
+                type="primary",
+            )
+        except StudioAPIError as exc:
+            st.error(str(exc))
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)
