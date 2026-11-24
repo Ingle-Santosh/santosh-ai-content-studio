@@ -70,4 +70,16 @@ uv run ruff format --check .
 - **Milestone 7 (LangGraph Orchestration)**: Complete — `TopicStrategistService`, LangGraph `StateGraph` with parallel Research + Competitor fan-out, persistent SQLite checkpointing (`data/checkpoints.db` via `AsyncSqliteSaver`), native `interrupt()` / `Command(resume=...)` across Gates 1–3, idempotent resume, `/api/projects/{project_id}/workflows/*` + `/api/workflows/{run_id}/*`, and Streamlit Workflow tab + Approval Center (`frontend/pages/3_Approval_Center.py`).
 - **Milestone 8 (Visual Asset Generation)**: Complete — `AssetGenerationService` (asset planner, Mermaid + SVG renderer, sanitized HTML5/CSS/JS animations, `LocalSVGImageProvider`, provenance screenshot uploads + SVG annotation overlays, AST-guarded & isolated Python/SQL code demo runner), deterministic `AssetQAService` & Gate 4 approval, `/api/projects/{project_id}/assets/*` + binary `/artifacts/{id}/download`, and Streamlit Assets tab.
 - **Milestone 9 (Production Package & YouTube Strategy)**: Complete — `YouTubeStrategyService` (titles, description with deterministic `8+ years` bio note enforcement, chapters, tags, thumbnail concepts), `ProductionService` (timed scene sequence, asset manifest, editing guide, Gate 5 approval, and downloadable `MANUAL_ONLY` ZIP export bundle), `/api/projects/{project_id}/production/*` routes, and Streamlit Production tab.
-- **Next**: **Milestone 10** — Evaluation & Hardening (weighted 7-dimension quality evaluation framework, structured logging, backup/restore utilities, regression suite, and deployment docs).
+- **Milestone 10 (Evaluation & Hardening)**: Complete — Alembic `0006_evaluations`, 7-dimension weighted `EvaluationService` (deterministic rubric + optional LLM judge, mandatory human review, latency & cost telemetry), `/api/projects/{project_id}/evaluations/*`, `/api/system/metrics`, structured JSON logging & `X-Request-ID` middleware, global exception handlers, online SQLite + artifacts backup/verify/restore service & CLI (`scripts/backup_restore.py`), Streamlit Home KPIs & Workspace Evaluation tab, and [Deployment & Backup Operations Runbook](docs/operations/deployment_and_backup.md).
+
+## Operations & Backups
+
+Create, verify, and restore local SQLite + artifact backups:
+
+```powershell
+uv run python scripts/backup_restore.py backup
+uv run python scripts/backup_restore.py verify backups/<archive>.zip
+uv run python scripts/backup_restore.py restore backups/<archive>.zip --target ./data_restored
+```
+
+See [docs/operations/deployment_and_backup.md](docs/operations/deployment_and_backup.md) for the full operational runbook.

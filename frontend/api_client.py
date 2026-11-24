@@ -457,3 +457,20 @@ class StudioAPIClient:
             return resp.content
         except httpx.HTTPError as exc:
             raise StudioAPIError(f"Failed to download artifact: {exc}") from exc
+
+    # Evaluation & System Telemetry
+    def run_evaluation(
+        self,
+        project_id: str,
+        *,
+        use_llm_judge: bool = False,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"use_llm_judge": use_llm_judge}
+        return dict(self._request("POST", f"/api/projects/{project_id}/evaluations/run", json=body))
+
+    def list_evaluations(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/evaluations")
+        return list(payload.get("items", []))
+
+    def get_system_metrics(self) -> dict[str, Any]:
+        return dict(self._request("GET", "/api/system/metrics"))

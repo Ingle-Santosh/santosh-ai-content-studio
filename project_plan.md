@@ -3,8 +3,8 @@
 
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
-**Version:** 1.1  
-**Status:** Development – Milestone 9 Complete / Ready for Milestone 10  
+**Version:** 1.2  
+**Status:** Release Ready – All 10 Milestones Complete  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -880,17 +880,14 @@ Tasks:
 
 Tasks:
 
-- Build agent evaluation framework.
-- Create representative test projects.
-- Evaluate factual accuracy.
-- Evaluate source quality.
-- Evaluate script quality.
-- Evaluate asset quality.
-- Measure model latency and cost.
-- Add structured logs.
-- Improve exception handling.
-- Test larger projects.
-- Document deployment and backup procedures.
+- [x] Build agent evaluation framework (`Evaluation` model + Alembic `0006_evaluations`, `EvaluationRepository`, `EvaluationWeights` / `EvaluationDimensionScores` / `compute_weighted_score`, `EvaluationService`, `prompts/evaluation/system.md`, deterministic 7-dimension rubric + optional LLM-as-a-judge blend, mandatory `human_review_required=True`, and persisted `06_export/evaluation_report.md`).
+- [x] Create representative test projects and end-to-end regression suite (`tests/test_evaluation_framework.py`, `tests/test_backup_and_restore.py`, `tests/test_milestone10_api_and_regression.py`, and updated `tests/test_migrations.py`).
+- [x] Evaluate factual accuracy, source quality, script quality, teaching clarity, visual relevance, channel guideline compliance, and production readiness via repeatable weighted rubric.
+- [x] Measure model latency and cost (`LatencyCostSummary` per evaluation + global `GET /api/system/metrics` telemetry endpoint + Home dashboard KPI strip & Workspace Evaluation tab).
+- [x] Add structured JSON logs (`StructuredJSONFormatter`, `configure_structured_logging`) and request-correlation middleware (`X-Request-ID` + request duration logging).
+- [x] Improve global exception handling (`ResourceNotFoundError` → 404, `WorkflowGateError` → 409, unhandled exceptions → structured 500 JSON).
+- [x] Implement online SQLite + project artifact backup/verify/restore service (`backup_service.py` with SHA-256 manifest + zip-slip traversal guard) and CLI (`scripts/backup_restore.py`).
+- [x] Document deployment, Alembic migrations, backup/restore, security, and future cloud migration procedures (`docs/operations/deployment_and_backup.md`).
 
 **Acceptance criteria:**
 
@@ -1139,7 +1136,7 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 9 is complete. The final milestone is **Milestone 10 – Evaluation and Hardening**.
+All 10 milestones of **Santosh Analytics AI Content Studio (v1.0)** are complete.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
@@ -1150,7 +1147,7 @@ Milestone 9 is complete. The final milestone is **Milestone 10 – Evaluation an
 - [x] Milestone 7 – LangGraph Orchestration (`langgraph` + `AsyncSqliteSaver` in `data/checkpoints.db`, `TopicStrategistService`, parallel Research + Competitor fan-out, native `interrupt()`/`Command(resume=...)` across Gates 1–3, `WorkflowOrchestrator`, Workflow API, and Approval Center UI).
 - [x] Milestone 8 – Visual Asset Generation (`AssetGenerationService`, Mermaid+SVG renderer, sanitized HTML animations, `LocalSVGImageProvider`, provenance screenshot uploads & annotations, isolated Python/SQL code sandbox, deterministic `AssetQAService` & Gate 4 approval).
 - [x] Milestone 9 – Production Package & YouTube Strategy (`YouTubeStrategyService`, `ProductionService`, timed scene sequence, asset manifest, Gate 5 approval, deterministic ZIP export bundle — `MANUAL_ONLY`).
-- [ ] Begin Milestone 10 – Evaluation and Hardening (configurable 7-dimension quality evaluation framework, structured JSON logging, global exception handlers, backup/restore service & CLI, representative regression tests, and operational docs).
+- [x] Milestone 10 – Evaluation and Hardening (`0006_evaluations`, configurable 7-dimension quality evaluation framework & Evaluation tab, `/api/system/metrics` & Home KPIs, structured JSON logging + `X-Request-ID` middleware, global exception handlers, SHA-256 backup/restore service & CLI, representative regression tests, and operational runbook in `docs/operations/deployment_and_backup.md`).
 
 ### Initial Commands
 

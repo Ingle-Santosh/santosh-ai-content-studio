@@ -22,6 +22,7 @@ from content_studio.database.models.enums import (
     ScriptStatus,
     SourceStatus,
 )
+from content_studio.database.models.evaluation import Evaluation
 from content_studio.database.models.llm_usage_log import LLMUsageLog
 from content_studio.database.models.project import Project
 from content_studio.database.models.research_document import ResearchDocument
@@ -47,6 +48,7 @@ __all__ = [
     "ClaimSource",
     "ClaimVerdict",
     "CompetitorVideo",
+    "Evaluation",
     "EvidenceStance",
     "FindingCategory",
     "LLMUsageLog",

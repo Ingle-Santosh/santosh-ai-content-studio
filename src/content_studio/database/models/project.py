@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from content_studio.database.models.artifact import Artifact
     from content_studio.database.models.claim import Claim
     from content_studio.database.models.competitor_video import CompetitorVideo
+    from content_studio.database.models.evaluation import Evaluation
     from content_studio.database.models.llm_usage_log import LLMUsageLog
     from content_studio.database.models.research_document import ResearchDocument
     from content_studio.database.models.research_finding import ResearchFinding
@@ -82,5 +83,8 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     scenes: Mapped[list["Scene"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    evaluations: Mapped[list["Evaluation"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
