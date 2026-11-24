@@ -23,6 +23,7 @@ from content_studio.database.models.enums import (
     SceneVisualType,
 )
 from content_studio.database.models.project import Project
+from content_studio.database.models.scene import Scene
 from content_studio.database.repositories import (
     AgentRunRepository,
     ProjectRepository,
@@ -112,13 +113,88 @@ class AssetGenerationService:
             raise ProjectNotFoundError(f"Project '{project_id}' not found.")
         return project
 
+    @staticmethod
+    def _build_default_baseline_plan(
+        *,
+        project: Project,
+        scenes: list[Scene],
+    ) -> list[PlannedAssetItem]:
+        """Synthesize baseline visual/code assets when storyboard scenes omit asset_requirements."""
+        if not scenes:
+            return []
+
+        def _pick_scene(keywords: tuple[str, ...], fallback_idx: int) -> Scene:
+            for sc in scenes:
+                hay = f"{sc.related_script_section} {sc.title}".lower()
+                if any(kw in hay for kw in keywords):
+                    return sc
+            return scenes[min(fallback_idx, len(scenes) - 1)]
+
+        baseline: list[PlannedAssetItem] = []
+        cfg = project.config or {}
+
+        # 1. Core architecture diagram
+        diag_scene = _pick_scene(("main_explanation", "explanation", "architecture", "problem"), 0)
+        diag_title = f"{project.title} Architecture Flow"
+        diag_key = f"s{diag_scene.scene_number:02d}_diagram_1"
+        baseline.append(
+            PlannedAssetItem(
+                asset_key=diag_key,
+                scene_id=diag_scene.id,
+                scene_number=diag_scene.scene_number,
+                category=AssetCategory.DIAGRAM,
+                title=diag_title,
+                description=f"Architecture flowchart illustrating {project.topic}.",
+                filename=f"{diag_key}_{_slugify(diag_title)}.svg",
+                priority=1,
+            )
+        )
+
+        # 2. Interactive animation (when enabled in project config)
+        if cfg.get("include_animations", True):
+            anim_scene = _pick_scene(("introduction", "example", "walkthrough"), 1)
+            anim_title = f"{project.title} Step Walkthrough"
+            anim_key = f"s{anim_scene.scene_number:02d}_animation_1"
+            baseline.append(
+                PlannedAssetItem(
+                    asset_key=anim_key,
+                    scene_id=anim_scene.id,
+                    scene_number=anim_scene.scene_number,
+                    category=AssetCategory.ANIMATION,
+                    title=anim_title,
+                    description=f"Interactive step-by-step walkthrough for {project.topic}.",
+                    filename=f"{anim_key}_{_slugify(anim_title)}.html",
+                    priority=2,
+                )
+            )
+
+        # 3. Validated code demo (when enabled in project config)
+        if cfg.get("include_code_demo", True):
+            code_scene = _pick_scene(("practical_demonstration", "demo", "code", "example"), 2)
+            code_title = f"{project.title} Hands-On Demo"
+            code_key = f"s{code_scene.scene_number:02d}_code_demo_1"
+            baseline.append(
+                PlannedAssetItem(
+                    asset_key=code_key,
+                    scene_id=code_scene.id,
+                    scene_number=code_scene.scene_number,
+                    category=AssetCategory.CODE_DEMO,
+                    title=code_title,
+                    description=f"Runnable Python/SQL demonstration for {project.topic}.",
+                    filename=f"{code_key}_{_slugify(code_title)}.py",
+                    priority=1,
+                )
+            )
+
+        return baseline
+
     async def plan_assets(
         self,
         project_id: str,
         *,
         run_id: str | None = None,
     ) -> AssetPlan:
-        await self._require_project(project_id)
+        project = await self._require_project(project_id)
         scenes = list(await self._scene_repo.list_for_project(project_id))
 
         items: list[PlannedAssetItem] = []
@@ -165,6 +241,9 @@ class AssetGenerationService:
                         else 2,
                     )
                 )
+
+        if scenes and not items:
+            items.extend(self._build_default_baseline_plan(project=project, scenes=scenes))
 
         plan = AssetPlan(
             project_id=project_id,

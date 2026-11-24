@@ -79,7 +79,7 @@ class ProjectRepository:
         if spent_usd is not None:
             project.spent_usd = spent_usd
         if error_message is not None:
-            project.error_message = error_message
+            project.error_message = error_message or None
 
         project.updated_at = datetime.now(UTC)
         await self._session.commit()

@@ -9,9 +9,11 @@ from content_studio.config.settings import Settings
 from content_studio.database.models.project import Project
 from content_studio.database.repositories.project_repository import ProjectRepository
 from content_studio.database.repositories.usage_repository import UsageRepository
+from content_studio.providers.llm.anthropic import AnthropicProvider
 from content_studio.providers.llm.base import BaseLLMProvider
 from content_studio.providers.llm.gemini import GeminiProvider
 from content_studio.providers.llm.ollama import OllamaProvider
+from content_studio.providers.llm.openai_compat import OpenAICompatibleProvider
 from content_studio.providers.llm.structured import parse_structured_output
 from content_studio.providers.llm.types import (
     BudgetExceededError,
@@ -85,12 +87,53 @@ class ModelRouter:
         self._project_repo = project_repo
 
     @staticmethod
-    def _build_default_cloud(app_settings: Settings) -> BaseLLMProvider | None:
+    def _resolve_cloud_api_key(app_settings: Settings, provider_name: str) -> str | None:
+        specific: str | None = None
+        if provider_name == "gemini":
+            specific = app_settings.GEMINI_API_KEY
+        elif provider_name == "openai":
+            specific = app_settings.OPENAI_API_KEY
+        elif provider_name == "anthropic":
+            specific = app_settings.ANTHROPIC_API_KEY
+        chosen = (specific or "").strip() or (app_settings.CLOUD_API_KEY or "").strip()
+        return chosen or None
+
+    @staticmethod
+    def _resolve_cloud_base_url(app_settings: Settings, provider_name: str) -> str:
+        override = (app_settings.CLOUD_BASE_URL or "").strip()
+        if override:
+            return override
+        if provider_name == "gemini":
+            return app_settings.GEMINI_BASE_URL
+        if provider_name == "anthropic":
+            return app_settings.ANTHROPIC_BASE_URL
+        return app_settings.OPENAI_BASE_URL
+
+    @classmethod
+    def _build_default_cloud(cls, app_settings: Settings) -> BaseLLMProvider | None:
         provider_name = app_settings.CLOUD_LLM_PROVIDER.strip().lower()
-        if provider_name == "gemini" and (app_settings.GEMINI_API_KEY or "").strip():
+        api_key = cls._resolve_cloud_api_key(app_settings, provider_name)
+        if not api_key:
+            return None
+
+        base_url = cls._resolve_cloud_base_url(app_settings, provider_name)
+        if provider_name == "gemini":
             return GeminiProvider(
-                api_key=app_settings.GEMINI_API_KEY,
-                base_url=app_settings.GEMINI_BASE_URL,
+                api_key=api_key,
+                base_url=base_url,
+                default_timeout=app_settings.LLM_TIMEOUT_SECONDS,
+            )
+        if provider_name == "anthropic":
+            return AnthropicProvider(
+                api_key=api_key,
+                base_url=base_url,
+                default_timeout=app_settings.LLM_TIMEOUT_SECONDS,
+            )
+        if provider_name in {"openai", "openai_compatible"}:
+            return OpenAICompatibleProvider(
+                api_key=api_key,
+                base_url=base_url,
+                provider_name=provider_name,
                 default_timeout=app_settings.LLM_TIMEOUT_SECONDS,
             )
         return None
@@ -103,6 +146,14 @@ class ModelRouter:
         return self._settings.OLLAMA_DEFAULT_MODEL
 
     def cloud_model_for_task(self, _task: TaskType) -> str:
+        override = (self._settings.CLOUD_DEFAULT_MODEL or "").strip()
+        if override:
+            return override
+        provider_name = self._settings.CLOUD_LLM_PROVIDER.strip().lower()
+        if provider_name == "openai":
+            return self._settings.OPENAI_DEFAULT_MODEL
+        if provider_name == "anthropic":
+            return self._settings.ANTHROPIC_DEFAULT_MODEL
         return self._settings.GEMINI_DEFAULT_MODEL
 
     def describe_routing_table(self) -> dict[str, dict[str, object]]:
@@ -110,7 +161,7 @@ class ModelRouter:
         for task in TaskType:
             decision = self._decide_route(
                 task=task,
-                prefer_cloud=False,
+                prefer_cloud=self._settings.PREFER_CLOUD_DEFAULT,
                 strict_cloud=False,
                 project=None,
                 current_global_spend=0.0,
@@ -127,11 +178,42 @@ class ModelRouter:
         project: Project | None,
         current_global_spend: float,
     ) -> RouteDecision:
-        local_model = self.local_model_for_task(task)
-        project_allows_cloud = bool(
-            project is not None and project.config.get("cloud_fallback_enabled", False)
+        project_cfg = project.config if project is not None else {}
+        project_provider = str(project_cfg.get("llm_provider") or "default").strip().lower()
+        raw_project_model = project_cfg.get("llm_model")
+        project_model = str(raw_project_model).strip() if raw_project_model else None
+
+        local_model = (
+            project_model
+            if (project_provider == "ollama" and project_model)
+            else self.local_model_for_task(task)
         )
-        wants_cloud = prefer_cloud or project_allows_cloud
+        if project_provider == "ollama" and not strict_cloud:
+            return RouteDecision(
+                task=task,
+                provider=self._local_provider.provider_name,
+                model=local_model,
+                is_cloud=False,
+            )
+
+        project_allows_cloud = bool(project_cfg.get("cloud_fallback_enabled", False))
+        task_prefers_cloud = task.value in {
+            item.strip().lower() for item in self._settings.CLOUD_TASKS
+        }
+        project_wants_cloud = project_provider in {
+            "cloud",
+            "gemini",
+            "openai",
+            "anthropic",
+            "openai_compatible",
+        }
+        wants_cloud = (
+            prefer_cloud
+            or self._settings.PREFER_CLOUD_DEFAULT
+            or task_prefers_cloud
+            or project_allows_cloud
+            or project_wants_cloud
+        )
 
         if not wants_cloud:
             return RouteDecision(
@@ -196,10 +278,15 @@ class ModelRouter:
                 fallback_reason="project_budget_exhausted",
             )
 
+        cloud_model = (
+            project_model
+            if (project_wants_cloud and project_model)
+            else self.cloud_model_for_task(task)
+        )
         return RouteDecision(
             task=task,
             provider=self._cloud_provider.provider_name,
-            model=self.cloud_model_for_task(task),
+            model=cloud_model,
             is_cloud=True,
         )
 
@@ -432,14 +519,15 @@ class ModelRouter:
         if self._cloud_provider is not None:
             checks.append(self._cloud_provider.health_check())
         else:
+            provider_name = self._settings.CLOUD_LLM_PROVIDER.strip().lower()
             checks.append(
                 asyncio.sleep(
                     0,
                     result=ProviderHealth(
-                        provider=self._settings.CLOUD_LLM_PROVIDER,
+                        provider=provider_name,
                         is_cloud=True,
                         available=False,
-                        base_url=self._settings.GEMINI_BASE_URL,
+                        base_url=self._resolve_cloud_base_url(self._settings, provider_name),
                         models=[],
                         error="Cloud API key not configured",
                     ),

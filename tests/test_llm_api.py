@@ -79,3 +79,34 @@ async def test_llm_status_and_project_usage_endpoints(
         assert summary["total_prompt_tokens"] == 400
         assert summary["total_completion_tokens"] == 200
         assert summary["total_estimated_cost_usd"] == 0.0
+
+        # PATCH /api/llm/config updates active models/provider without leaking API keys
+        patch_resp = await client.patch(
+            "/api/llm/config",
+            json={
+                "local_only": False,
+                "prefer_cloud_default": True,
+                "ollama_default_model": "qwen3.5:9b",
+                "gemini_default_model": "gemini-2.5-pro",
+                "gemini_api_key": "test-secret-key",
+                "max_budget_usd": 5.0,
+                "llm_timeout_seconds": 240.0,
+            },
+        )
+        assert patch_resp.status_code == 200
+        patched = patch_resp.json()
+        assert patched["local_only"] is False
+        assert patched["prefer_cloud_default"] is True
+        assert patched["ollama_default_model"] == "qwen3.5:9b"
+        assert patched["gemini_default_model"] == "gemini-2.5-pro"
+        assert patched["gemini_api_key_configured"] is True
+        assert patched["max_budget_usd"] == 5.0
+        assert patched["llm_timeout_seconds"] == 240.0
+        assert "test-secret-key" not in patch_resp.text
+
+        # Non-secret config persisted to data/llm_runtime_config.json without any API key
+        cfg_file = test_settings.resolved_data_dir / "llm_runtime_config.json"
+        assert cfg_file.is_file()
+        cfg_text = cfg_file.read_text(encoding="utf-8")
+        assert "qwen3.5:9b" in cfg_text
+        assert "test-secret-key" not in cfg_text

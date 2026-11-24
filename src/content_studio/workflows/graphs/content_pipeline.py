@@ -82,9 +82,13 @@ def build_content_pipeline_graph(
             existing = await services.approval.list_approvals(
                 project_id=state["project_id"],
                 gate=gate,
-                status=ApprovalStatus.PENDING,
             )
-            matching = [a for a in existing if a.run_id == state.get("run_id")]
+            matching = [
+                a
+                for a in existing
+                if a.run_id == state.get("run_id")
+                and (artifact_id is None or a.artifact_id == artifact_id)
+            ]
             if matching:
                 approval = matching[0]
             else:

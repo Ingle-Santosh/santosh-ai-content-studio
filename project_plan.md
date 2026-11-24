@@ -995,7 +995,7 @@ DATABASE_URL=
 
 API_BASE_URL=http://127.0.0.1:8000
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_DEFAULT_MODEL=qwen2.5-coder:14b
+OLLAMA_DEFAULT_MODEL=qwen3.5:9b
 OLLAMA_WRITING_MODEL=
 
 # Optional cloud fallback (used only when LOCAL_ONLY=false and budget allows)

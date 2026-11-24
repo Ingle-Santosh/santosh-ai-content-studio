@@ -219,3 +219,59 @@ async def test_asset_planning_independent_retry_and_qa_gate(
     )
     assert len(approvals) == 1
     assert approvals[0].status == ApprovalStatus.PENDING.value
+
+
+@pytest.mark.asyncio
+async def test_asset_planner_synthesizes_baseline_when_scenes_lack_requirements(
+    test_settings: Settings,
+    db_session: AsyncSession,
+    artifact_store: ArtifactStore,
+) -> None:
+    project_repo = ProjectRepository(db_session)
+    scene_repo = SceneRepository(db_session)
+    artifact_service = ArtifactService(
+        project_repo=project_repo,
+        artifact_repo=ArtifactRepository(db_session),
+        store=artifact_store,
+    )
+    project = await project_repo.create(
+        title="Apache Superset RBAC",
+        topic="RBAC and RLS in Apache Superset",
+        config={"include_code_demo": True, "include_animations": True},
+    )
+    await scene_repo.replace_for_project(
+        project.id,
+        script_version_id=None,
+        run_id=None,
+        scenes_data=[
+            {
+                "scene_number": 1,
+                "title": "Main Explanation",
+                "estimated_duration_seconds": 60,
+                "narration": "How RBAC and RLS work in Superset.",
+                "visual_type": "face_cam",
+                "asset_requirements": [],
+                "related_script_section": "main_explanation",
+            },
+            {
+                "scene_number": 2,
+                "title": "Practical Demonstration",
+                "estimated_duration_seconds": 60,
+                "narration": "Configure roles and row level filters.",
+                "visual_type": "face_cam",
+                "asset_requirements": [],
+                "related_script_section": "practical_demonstration",
+            },
+        ],
+    )
+    service = AssetGenerationService(
+        app_settings=test_settings,
+        project_repo=project_repo,
+        scene_repo=scene_repo,
+        artifact_service=artifact_service,
+        model_router=ModelRouter(app_settings=test_settings, local_provider=_AssetStubLLM()),
+        image_provider=LocalSVGImageProvider(),
+    )
+    plan = await service.plan_assets(project.id)
+    categories = {item.category.value for item in plan.items}
+    assert categories == {"diagram", "animation", "code_demo"}

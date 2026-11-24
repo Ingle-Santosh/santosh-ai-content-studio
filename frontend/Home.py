@@ -99,11 +99,25 @@ with col1:
 
 with col2:
     st.subheader("System Configuration")
+    try:
+        llm_live = client.get_llm_status()
+    except StudioAPIError:
+        llm_live = None
     st.write(f"- **Backend**: FastAPI (`{settings.API_BASE_URL}`)")
     st.write(f"- **Database**: Local SQLite (`{settings.resolved_data_dir / 'content_studio.db'}`)")
-    st.write(f"- **Primary Inference**: Ollama (`{settings.OLLAMA_BASE_URL}`)")
-    st.write(f"- **Default Model**: `{settings.OLLAMA_DEFAULT_MODEL}`")
-    st.write(f"- **Local-Only Mode**: `{settings.LOCAL_ONLY}`")
+    st.write(f"- **Primary Local Inference**: Ollama (`{settings.OLLAMA_BASE_URL}`)")
+    if llm_live is not None:
+        st.write(f"- **Active Local Model**: `{llm_live.get('ollama_default_model')}`")
+        st.write(
+            f"- **Cloud Provider / Model**: "
+            f"`{llm_live.get('cloud_provider')}/{llm_live.get('cloud_default_model')}` "
+            f"(key configured: `{llm_live.get('cloud_api_key_configured')}`)"
+        )
+        st.write(f"- **Local-Only Mode**: `{llm_live.get('local_only')}`")
+        st.write(f"- **LLM Timeout**: `{llm_live.get('llm_timeout_seconds')}s`")
+    else:
+        st.write(f"- **Default Model**: `{settings.OLLAMA_DEFAULT_MODEL}`")
+        st.write(f"- **Local-Only Mode**: `{settings.LOCAL_ONLY}`")
 
 st.divider()
 st.subheader("Projects")

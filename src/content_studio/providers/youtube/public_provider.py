@@ -58,35 +58,44 @@ class PublicYouTubeSearchProvider(BaseYouTubeProvider):
         if not cleaned:
             return []
 
-        try:
-            raw_results = await self._search_provider.search(
-                f"site:youtube.com/watch {cleaned}",
-                max_results=max_results * 2,
-            )
-        except SearchProviderError:
-            return []
+        search_queries = [
+            f"site:youtube.com/watch {cleaned}",
+            f"youtube.com/watch {cleaned}",
+            f"{cleaned} youtube tutorial",
+        ]
 
         videos: list[YouTubeVideoMetadata] = []
         seen_ids: set[str] = set()
-        for item in raw_results:
-            vid = extract_youtube_video_id(item.url)
-            if not vid or vid in seen_ids:
-                continue
-            seen_ids.add(vid)
-            canonical_url = f"https://www.youtube.com/watch?v={vid}"
-            oembed = await self._fetch_oembed(canonical_url)
-            videos.append(
-                YouTubeVideoMetadata(
-                    youtube_video_id=vid,
-                    url=canonical_url,
-                    title=oembed.get("title") or item.title or canonical_url,
-                    channel_name=oembed.get("author_name") or "",
-                    published_at=item.published_date,
-                    description=item.snippet or None,
-                    provider=self.provider_name,
+        for search_q in search_queries:
+            try:
+                raw_results = await self._search_provider.search(
+                    search_q,
+                    max_results=max_results * 2,
                 )
-            )
-            if len(videos) >= max_results:
+            except SearchProviderError:
+                continue
+
+            for item in raw_results:
+                vid = extract_youtube_video_id(item.url)
+                if not vid or vid in seen_ids:
+                    continue
+                seen_ids.add(vid)
+                canonical_url = f"https://www.youtube.com/watch?v={vid}"
+                oembed = await self._fetch_oembed(canonical_url)
+                videos.append(
+                    YouTubeVideoMetadata(
+                        youtube_video_id=vid,
+                        url=canonical_url,
+                        title=oembed.get("title") or item.title or canonical_url,
+                        channel_name=oembed.get("author_name") or "",
+                        published_at=item.published_date,
+                        description=item.snippet or None,
+                        provider=self.provider_name,
+                    )
+                )
+                if len(videos) >= max_results:
+                    return videos
+            if videos:
                 break
         return videos
 

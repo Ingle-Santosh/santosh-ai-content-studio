@@ -22,12 +22,13 @@ def _submit_decision(
 ) -> None:
     try:
         if wf_run_id:
-            snap = client.resume_workflow(
-                wf_run_id,
-                decision=decision,
-                reviewer=reviewer.strip() or "Creator",
-                comments=notes.strip() or None,
-            )
+            with st.spinner("Resuming workflow execution..."):
+                snap = client.resume_workflow(
+                    wf_run_id,
+                    decision=decision,
+                    reviewer=reviewer.strip() or "Creator",
+                    comments=notes.strip() or None,
+                )
             st.success(
                 f"Workflow resumed ({decision}) -> now `{snap['status']}` "
                 f"at `{snap.get('current_stage')}`."
@@ -68,14 +69,29 @@ else:
             if item.get("comments"):
                 st.write(item["comments"])
 
-            if item.get("artifact_id") and st.button(
-                "Preview Linked Artifact", key=f"ac_prev_{item['id']}"
-            ):
+            if item.get("run_id"):
                 try:
-                    payload = client.get_artifact_content(item["project_id"], item["artifact_id"])
-                    st.markdown(payload["content"])
-                except StudioAPIError as exc:
-                    st.error(str(exc))
+                    wf_snap = client.get_workflow_status(item["run_id"])
+                    done_steps = wf_snap.get("completed_steps") or []
+                    if done_steps:
+                        st.caption(
+                            "Completed Steps: " + " → ".join(f"✅ {step}" for step in done_steps)
+                        )
+                except StudioAPIError:
+                    pass
+
+            if item.get("artifact_id"):
+                with st.expander(
+                    f"📄 Generated Output for `{item['gate']}` Gate (Review Before Approving)",
+                    expanded=True,
+                ):
+                    try:
+                        payload = client.get_artifact_content(
+                            item["project_id"], item["artifact_id"]
+                        )
+                        st.markdown(payload["content"])
+                    except StudioAPIError as exc:
+                        st.error(str(exc))
 
             reviewer = st.text_input("Reviewer", value="Santosh", key=f"ac_rev_{item['id']}")
             notes = st.text_area(

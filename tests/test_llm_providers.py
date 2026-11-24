@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from content_studio.providers.llm import (
+    AnthropicProvider,
     GeminiProvider,
     LLMConfigurationError,
     LLMMessage,
@@ -13,6 +14,7 @@ from content_studio.providers.llm import (
     LLMTimeoutError,
     LLMTransientError,
     OllamaProvider,
+    OpenAICompatibleProvider,
     StructuredOutputError,
     parse_structured_output,
 )
@@ -162,3 +164,76 @@ def test_parse_structured_output_handles_fences_and_rejects_invalid() -> None:
 
     with pytest.raises(StructuredOutputError):
         parse_structured_output("not json at all", _SampleBrief)
+
+
+@pytest.mark.asyncio
+async def test_openai_compatible_and_anthropic_providers() -> None:
+    openai_headers: dict[str, str] = {}
+    openai_body: dict = {}
+
+    def openai_handler(request: httpx.Request) -> httpx.Response:
+        openai_headers.update(dict(request.headers))
+        openai_body.update(json.loads(request.content.decode("utf-8")))
+        return httpx.Response(
+            200,
+            json={
+                "model": "gpt-4.1-mini",
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": '{"angle": "OpenAI"}'},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 500, "completion_tokens": 200},
+            },
+        )
+
+    openai_prov = OpenAICompatibleProvider(
+        api_key="sk-test-openai",
+        transport=httpx.MockTransport(openai_handler),
+    )
+    o_resp = await openai_prov.generate(
+        LLMRequest(
+            model="gpt-4.1-mini",
+            messages=[LLMMessage(role="user", content="Write script")],
+            json_mode=True,
+        )
+    )
+    assert openai_headers.get("authorization") == "Bearer sk-test-openai"
+    assert openai_body["response_format"] == {"type": "json_object"}
+    assert o_resp.provider == "openai"
+    assert o_resp.usage.estimated_cost_usd > 0.0
+
+    anthropic_headers: dict[str, str] = {}
+    anthropic_body: dict = {}
+
+    def anthropic_handler(request: httpx.Request) -> httpx.Response:
+        anthropic_headers.update(dict(request.headers))
+        anthropic_body.update(json.loads(request.content.decode("utf-8")))
+        return httpx.Response(
+            200,
+            json={
+                "model": "claude-sonnet-4-20250514",
+                "content": [{"type": "text", "text": '{"angle": "Claude"}'}],
+                "stop_reason": "end_turn",
+                "usage": {"input_tokens": 600, "output_tokens": 250},
+            },
+        )
+
+    claude_prov = AnthropicProvider(
+        api_key="sk-ant-test",
+        transport=httpx.MockTransport(anthropic_handler),
+    )
+    c_resp = await claude_prov.generate(
+        LLMRequest(
+            model="claude-sonnet-4-20250514",
+            messages=[
+                LLMMessage(role="system", content="You are an educator."),
+                LLMMessage(role="user", content="Write script"),
+            ],
+        )
+    )
+    assert anthropic_headers.get("x-api-key") == "sk-ant-test"
+    assert anthropic_body["system"] == "You are an educator."
+    assert c_resp.provider == "anthropic"
+    assert c_resp.usage.estimated_cost_usd > 0.0

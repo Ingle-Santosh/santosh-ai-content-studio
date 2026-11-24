@@ -38,35 +38,125 @@ meta_cols[1].metric("Stage", project.get("current_stage") or "—")
 meta_cols[2].metric("Budget (USD)", f"${project.get('budget_usd', 0.0):.2f}")
 meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 
+proj_cfg = dict(project.get("config") or {})
+current_proj_provider = str(proj_cfg.get("llm_provider") or "default")
+current_proj_model = str(proj_cfg.get("llm_model") or "")
+with st.expander(
+    f"🤖 Model & Budget Override (Provider: `{current_proj_provider}` · "
+    f"Model: `{current_proj_model or 'Settings default'}`)"
+):
+    try:
+        llm_info = client.get_llm_status()
+        provs = {p["provider"]: p for p in llm_info.get("providers", [])}
+        discovered_ollama = list(provs.get("ollama", {}).get("models", []))
+        discovered_gemini = list(provs.get("gemini", {}).get("models", [])) or [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash",
+        ]
+    except StudioAPIError:
+        discovered_ollama = []
+        discovered_gemini = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+
+    with st.form(f"project_model_override_{project_id}"):
+        m_col1, m_col2, m_col3 = st.columns([1, 2, 1])
+        provider_opts = ["default", "ollama", "cloud"]
+        normalized_proj_provider = (
+            "cloud"
+            if current_proj_provider in {"gemini", "openai", "anthropic", "openai_compatible"}
+            else current_proj_provider
+        )
+        p_idx = (
+            provider_opts.index(normalized_proj_provider)
+            if normalized_proj_provider in provider_opts
+            else 0
+        )
+        chosen_provider = m_col1.selectbox(
+            "Project Provider",
+            provider_opts,
+            index=p_idx,
+            help=(
+                "'default' uses Settings (including Hybrid Tiered mode); "
+                "'ollama' forces local; 'cloud' forces active Cloud provider."
+            ),
+        )
+        suggested_models = (
+            [m for m in discovered_ollama if m != "qwen2.5-coder:14b"]
+            if chosen_provider == "ollama"
+            else discovered_gemini
+            if chosen_provider == "cloud"
+            else [*[m for m in discovered_ollama if m != "qwen2.5-coder:14b"], *discovered_gemini]
+        )
+        model_placeholder = (
+            f"Leave blank for Settings default (e.g., {', '.join(suggested_models[:3])})"
+            if suggested_models
+            else "Leave blank for Settings default"
+        )
+        chosen_model = m_col2.text_input(
+            "Model Override (optional)",
+            value=current_proj_model,
+            placeholder=model_placeholder,
+        )
+        proj_budget = m_col3.number_input(
+            "Project Budget (USD)",
+            min_value=0.0,
+            max_value=500.0,
+            value=float(project.get("budget_usd", 0.0)),
+            step=0.5,
+            help="Set > $0.00 to enable Cloud calls (OpenAI/Claude/Gemini) for this project.",
+        )
+        if st.form_submit_button("Save Project Model & Budget"):
+            updated_cfg = dict(proj_cfg)
+            updated_cfg["llm_provider"] = chosen_provider
+            updated_cfg["llm_model"] = chosen_model.strip() or None
+            if chosen_provider == "cloud":
+                updated_cfg["cloud_fallback_enabled"] = True
+            try:
+                client.update_project(
+                    project_id,
+                    config=updated_cfg,
+                    budget_usd=float(proj_budget),
+                )
+                st.success("Updated project model & budget settings.")
+                st.rerun()
+            except StudioAPIError as exc:
+                st.error(str(exc))
+
 (
-    tab_workflow,
-    tab_research,
-    tab_competitors,
-    tab_fact_check,
-    tab_script,
-    tab_storyboard,
-    tab_assets,
-    tab_production,
-    tab_evaluation,
-    tab_artifacts,
-    tab_add,
-    tab_approvals,
+    stage_pipeline,
+    stage_research,
+    stage_writing,
+    stage_production,
+    stage_quality,
 ) = st.tabs(
     [
-        "Workflow",
-        "Research",
-        "Competitors",
-        "Fact Checking",
-        "Script",
-        "Storyboard",
-        "Assets",
-        "Production",
-        "Evaluation",
-        "Artifacts Browser",
-        "Add Artifact",
-        "Approvals",
+        "🚀 Pipeline & Approvals",
+        "🔬 Research & Verification",
+        "📝 Script & Storyboard",
+        "🎨 Assets & Production",
+        "📊 Quality & Files",
     ]
 )
+
+with stage_pipeline:
+    tab_workflow, tab_approvals = st.tabs(["Workflow Pipeline", "Project Approvals"])
+
+with stage_research:
+    tab_research, tab_competitors, tab_fact_check = st.tabs(
+        ["Web Research", "Competitors", "Fact Checking"]
+    )
+
+with stage_writing:
+    tab_script, tab_storyboard = st.tabs(["Hinglish Script", "Scene Storyboard"])
+
+with stage_production:
+    tab_assets, tab_production = st.tabs(["Visual & Code Assets", "Production & YouTube Export"])
+
+with stage_quality:
+    tab_evaluation, tab_artifacts, tab_add = st.tabs(
+        ["Quality Evaluation", "Artifacts Browser", "Add Artifact"]
+    )
 
 with tab_workflow:
     st.subheader("LangGraph End-to-End Pipeline")
@@ -102,6 +192,23 @@ with tab_workflow:
         st.error(str(exc))
         wf_runs = []
 
+    _PIPELINE_STEPS = [
+        ("topic_strategist", "1. Topic Brief (Gate 1)"),
+        ("research", "2. Web Research"),
+        ("competitor", "3. Competitor Analysis"),
+        ("fact_checker", "4. Fact Checking (Gate 2)"),
+        ("scriptwriter", "5. Hinglish Script (Gate 3)"),
+        ("storyboard", "6. Storyboard Scenes"),
+    ]
+    _ARTIFACT_REF_LABELS = [
+        ("brief_artifact_id", "Content Brief"),
+        ("research_artifact_id", "Research Report"),
+        ("competitor_artifact_id", "Competitor Report"),
+        ("fact_check_artifact_id", "Fact-Check Report"),
+        ("script_artifact_id", "Script"),
+        ("storyboard_artifact_id", "Storyboard"),
+    ]
+
     if not wf_runs:
         st.caption("No LangGraph workflow runs started for this project yet.")
     else:
@@ -113,6 +220,59 @@ with tab_workflow:
                 )
                 if run.get("error_message"):
                     st.error(run["error_message"])
+
+                # Fetch full snapshot (completed steps + pending gate + artifact refs)
+                try:
+                    snap_detail = client.get_workflow_status(run["id"])
+                except StudioAPIError:
+                    snap_detail = None
+
+                if snap_detail is not None:
+                    done_steps = set(snap_detail.get("completed_steps") or [])
+                    pending_info = snap_detail.get("pending_interrupt")
+                    step_badges = []
+                    for step_key, step_label in _PIPELINE_STEPS:
+                        if step_key in done_steps:
+                            step_badges.append(f"✅ {step_label}")
+                        else:
+                            step_badges.append(f"⏳ {step_label}")
+                    st.caption(" → ".join(step_badges))
+
+                    # Show inline output preview of the current gate's artifact before approval
+                    if pending_info and pending_info.get("artifact_id"):
+                        gate_name = pending_info.get("gate", "review")
+                        if pending_info.get("summary"):
+                            st.info(
+                                f"**Paused at Gate (`{gate_name}`)**: {pending_info['summary']}"
+                            )
+                        with st.expander(
+                            f"📄 Review Generated Output for `{gate_name}` Gate (before approving)",
+                            expanded=True,
+                        ):
+                            try:
+                                art_payload = client.get_artifact_content(
+                                    project_id, pending_info["artifact_id"]
+                                )
+                                st.markdown(art_payload["content"])
+                            except StudioAPIError as exc:
+                                st.warning(f"Could not load gate artifact preview: {exc}")
+
+                    # Also let user inspect any other step outputs generated in this run
+                    art_refs = snap_detail.get("artifact_refs") or {}
+                    pending_art_id = (pending_info or {}).get("artifact_id")
+                    other_refs = [
+                        (label, art_refs[key])
+                        for key, label in _ARTIFACT_REF_LABELS
+                        if art_refs.get(key) and art_refs[key] != pending_art_id
+                    ]
+                    for label, art_id in other_refs:
+                        with st.expander(f"📄 View Step Output: {label}", expanded=False):
+                            try:
+                                payload = client.get_artifact_content(project_id, art_id)
+                                st.markdown(payload["content"])
+                            except StudioAPIError as exc:
+                                st.warning(f"Could not load {label}: {exc}")
+
                 if run["status"] == "INTERRUPTED":
                     wf_notes = st.text_input(
                         "Gate Feedback / Revision Notes",
@@ -120,25 +280,27 @@ with tab_workflow:
                     )
                     b1, b2, b3 = st.columns(3)
                     if b1.button("Approve & Resume", key=f"wf_app_{run['id']}", type="primary"):
-                        try:
-                            client.resume_workflow(
-                                run["id"],
-                                decision="APPROVED",
-                                comments=wf_notes.strip() or None,
-                            )
-                            st.rerun()
-                        except StudioAPIError as exc:
-                            st.error(str(exc))
+                        with st.spinner("Resuming workflow to next stage..."):
+                            try:
+                                client.resume_workflow(
+                                    run["id"],
+                                    decision="APPROVED",
+                                    comments=wf_notes.strip() or None,
+                                )
+                                st.rerun()
+                            except StudioAPIError as exc:
+                                st.error(str(exc))
                     if b2.button("Request Changes", key=f"wf_chg_{run['id']}"):
-                        try:
-                            client.resume_workflow(
-                                run["id"],
-                                decision="CHANGES_REQUESTED",
-                                comments=wf_notes.strip() or None,
-                            )
-                            st.rerun()
-                        except StudioAPIError as exc:
-                            st.error(str(exc))
+                        with st.spinner("Sending revision instructions to agent..."):
+                            try:
+                                client.resume_workflow(
+                                    run["id"],
+                                    decision="CHANGES_REQUESTED",
+                                    comments=wf_notes.strip() or None,
+                                )
+                                st.rerun()
+                            except StudioAPIError as exc:
+                                st.error(str(exc))
                     if b3.button("Cancel Run", key=f"wf_can_{run['id']}"):
                         try:
                             client.cancel_workflow(run["id"])

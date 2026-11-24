@@ -25,6 +25,7 @@ from app.api.routes import (
     system_router,
     workflows_router,
 )
+from content_studio.config.runtime_llm_config import apply_runtime_llm_config
 from content_studio.config.settings import settings
 from content_studio.database.session import engine
 from content_studio.services import ResourceNotFoundError, WorkflowGateError
@@ -37,6 +38,7 @@ logger = logging.getLogger("content_studio.api")
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     configure_structured_logging(settings.LOG_LEVEL)
     settings.ensure_directories()
+    apply_runtime_llm_config(settings)
     logger.info("Starting Santosh Analytics AI Content Studio API")
     yield
     await engine.dispose()

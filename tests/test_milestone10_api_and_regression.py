@@ -2,6 +2,8 @@ import json
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
+import httpx
+import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +31,7 @@ from content_studio.providers.llm import (
     ProviderHealth,
 )
 from content_studio.storage.artifact_store import ArtifactStore
+from frontend.api_client import StudioAPIClient, StudioAPIError
 
 
 class _RegressionFakeProvider(BaseLLMProvider):
@@ -288,3 +291,38 @@ async def test_end_to_end_pipeline_regression_and_system_metrics(
         assert metrics["pending_approvals"] >= 2
         assert metrics["total_llm_calls"] >= 2
         assert metrics["total_estimated_cost_usd"] == 0.0
+
+
+def test_studio_api_client_uses_long_timeout_for_workflows(monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded_timeouts: list[tuple[str, float]] = []
+
+    class _DummyResponse:
+        status_code = 200
+        content = b'{"status": "ok"}'
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {"status": "ok"}
+
+    def _fake_request(method: str, url: str, **kwargs: object) -> _DummyResponse:
+        recorded_timeouts.append((url, float(kwargs["timeout"])))  # type: ignore[arg-type]
+        return _DummyResponse()
+
+    monkeypatch.setattr(httpx, "request", _fake_request)
+    client = StudioAPIClient(base_url="http://127.0.0.1:8000", timeout=15.0, long_timeout=600.0)
+    client.get_health()
+    client.start_workflow("proj-1")
+    client.resume_workflow("run-1", decision="APPROVED")
+
+    assert recorded_timeouts[0][1] == 15.0
+    assert recorded_timeouts[1][1] == 600.0
+    assert recorded_timeouts[2][1] == 600.0
+
+    def _timeout_request(method: str, url: str, **kwargs: object) -> _DummyResponse:
+        raise httpx.ReadTimeout("timed out")
+
+    monkeypatch.setattr(httpx, "request", _timeout_request)
+    with pytest.raises(StudioAPIError, match="timed out after 600s"):
+        client.start_workflow("proj-1")

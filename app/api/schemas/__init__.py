@@ -48,6 +48,7 @@ from app.api.schemas.guideline import (
 )
 from app.api.schemas.health import HealthResponse
 from app.api.schemas.llm import (
+    LLMConfigUpdateRequest,
     LLMStatusResponse,
     ProjectUsageSummaryResponse,
     UsageLogResponse,
@@ -128,6 +129,7 @@ __all__ = [
     "FactCheckRunRequest",
     "FactCheckRunResponse",
     "HealthResponse",
+    "LLMConfigUpdateRequest",
     "LLMStatusResponse",
     "LatestProductionExportResponse",
     "ProductionPackageBuildRequest",

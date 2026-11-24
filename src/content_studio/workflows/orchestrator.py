@@ -128,6 +128,7 @@ class WorkflowOrchestrator:
                     project,
                     status=ProjectStatus.AWAITING_REVIEW,
                     current_stage=updated_run.current_stage,
+                    error_message="",
                 )
         elif values.get("cancelled"):
             updated_run = await self._run_repo.update_status(
@@ -141,6 +142,7 @@ class WorkflowOrchestrator:
                     project,
                     status=ProjectStatus.IN_PROGRESS,
                     current_stage=stage,
+                    error_message="",
                 )
         else:
             updated_run = await self._run_repo.update_status(
@@ -154,6 +156,7 @@ class WorkflowOrchestrator:
                     project,
                     status=ProjectStatus.COMPLETED,
                     current_stage=stage,
+                    error_message="",
                 )
 
         return WorkflowRunSnapshot(

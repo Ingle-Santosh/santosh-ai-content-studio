@@ -196,6 +196,90 @@ async def test_router_cloud_budget_tracking_and_fallback(
 
 
 @pytest.mark.asyncio
+async def test_router_honors_per_project_provider_and_model_overrides(
+    tmp_path: Path,
+    db_session: AsyncSession,
+) -> None:
+    cfg = _make_settings(
+        tmp_path,
+        LOCAL_ONLY=False,
+        PREFER_CLOUD_DEFAULT=True,
+        MAX_BUDGET_USD=5.0,
+        OLLAMA_DEFAULT_MODEL="qwen2.5-coder:14b",
+        GEMINI_DEFAULT_MODEL="gemini-2.5-flash",
+    )
+    project_repo = ProjectRepository(db_session)
+    local = _FakeProvider(provider_name="ollama", is_cloud=False, outcomes=[])
+    cloud = _FakeProvider(provider_name="gemini", is_cloud=True, outcomes=[])
+    router = ModelRouter(
+        app_settings=cfg,
+        local_provider=local,
+        cloud_provider=cloud,
+        project_repo=project_repo,
+    )
+
+    local_proj = await project_repo.create(
+        title="Fast Local Project",
+        topic="SQLite Tuning",
+        config={"llm_provider": "ollama", "llm_model": "qwen3.5:9b"},
+        budget_usd=2.0,
+    )
+    route_local = await router.resolve_route(TaskType.SCRIPTWRITING, project_id=local_proj.id)
+    assert route_local.provider == "ollama"
+    assert route_local.model == "qwen3.5:9b"
+    assert route_local.is_cloud is False
+
+    cloud_proj = await project_repo.create(
+        title="Custom Cloud Project",
+        topic="LLM Eval",
+        config={"llm_provider": "gemini", "llm_model": "gemini-2.5-pro"},
+        budget_usd=2.0,
+    )
+    route_cloud = await router.resolve_route(TaskType.SCRIPTWRITING, project_id=cloud_proj.id)
+    assert route_cloud.provider == "gemini"
+    assert route_cloud.model == "gemini-2.5-pro"
+    assert route_cloud.is_cloud is True
+
+
+@pytest.mark.asyncio
+async def test_router_hybrid_tiered_cloud_tasks_routing(
+    tmp_path: Path,
+    db_session: AsyncSession,
+) -> None:
+    cfg = _make_settings(
+        tmp_path,
+        LOCAL_ONLY=False,
+        PREFER_CLOUD_DEFAULT=False,
+        CLOUD_LLM_PROVIDER="openai",
+        OPENAI_API_KEY="sk-test-key",
+        OPENAI_DEFAULT_MODEL="gpt-4.1",
+        OLLAMA_DEFAULT_MODEL="qwen3.5:9b",
+        OLLAMA_FAST_MODEL="qwen2.5:3b",
+        CLOUD_TASKS=["scriptwriting", "fact_check"],
+        MAX_BUDGET_USD=5.0,
+    )
+    project_repo = ProjectRepository(db_session)
+    project = await project_repo.create(
+        title="Hybrid Tiered",
+        topic="Vector Databases",
+        budget_usd=2.0,
+    )
+    router = ModelRouter(app_settings=cfg, project_repo=project_repo)
+
+    # Lightweight step -> small fast local Ollama model
+    qa_route = await router.resolve_route(TaskType.QA_REVIEW, project_id=project.id)
+    assert qa_route.provider == "ollama"
+    assert qa_route.model == "qwen2.5:3b"
+    assert qa_route.is_cloud is False
+
+    # Important step -> powerful OpenAI cloud model
+    script_route = await router.resolve_route(TaskType.SCRIPTWRITING, project_id=project.id)
+    assert script_route.provider == "openai"
+    assert script_route.model == "gpt-4.1"
+    assert script_route.is_cloud is True
+
+
+@pytest.mark.asyncio
 async def test_router_retries_transient_errors_and_cloud_outage_fallback(tmp_path: Path) -> None:
     cfg = _make_settings(
         tmp_path,

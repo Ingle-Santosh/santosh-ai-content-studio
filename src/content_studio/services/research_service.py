@@ -446,7 +446,12 @@ class ResearchService:
                 raw_synthesis.findings,
                 extracted_texts,
             )
-            synthesis = raw_synthesis.model_copy(update={"findings": grounded_findings})
+            deduped_defs = list(
+                dict.fromkeys(d.strip() for d in raw_synthesis.key_definitions if d.strip())
+            )
+            synthesis = raw_synthesis.model_copy(
+                update={"findings": grounded_findings, "key_definitions": deduped_defs}
+            )
 
             url_to_source = self._build_source_lookup(extracted_texts)
             for item in grounded_findings:

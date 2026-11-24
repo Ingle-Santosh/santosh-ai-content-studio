@@ -8,9 +8,15 @@ class StudioAPIError(RuntimeError):
 
 
 class StudioAPIClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8000", timeout: float = 10.0) -> None:
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        timeout: float = 15.0,
+        long_timeout: float = 600.0,
+    ) -> None:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._long_timeout = long_timeout
 
     def _request(
         self,
@@ -19,21 +25,29 @@ class StudioAPIClient:
         *,
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> Any:
         url = f"{self._base_url}{path}"
+        effective_timeout = self._timeout if timeout is None else timeout
         try:
             response = httpx.request(
                 method,
                 url,
                 json=json,
                 params=params,
-                timeout=self._timeout,
+                timeout=effective_timeout,
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             detail = exc.response.text
             raise StudioAPIError(
                 f"Backend returned HTTP {exc.response.status_code}: {detail}"
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise StudioAPIError(
+                f"Request to {path} timed out after {effective_timeout:.0f}s. "
+                "Local LLM or workflow execution may still be running in the backend — "
+                "check the uvicorn terminal or refresh workflow history."
             ) from exc
         except httpx.HTTPError as exc:
             raise StudioAPIError(f"Failed to reach backend at {self._base_url}: {exc}") from exc
@@ -75,6 +89,20 @@ class StudioAPIClient:
 
     def delete_project(self, project_id: str) -> None:
         self._request("DELETE", f"/api/projects/{project_id}")
+
+    def update_project(
+        self,
+        project_id: str,
+        *,
+        config: dict[str, Any] | None = None,
+        budget_usd: float | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if config is not None:
+            body["config"] = config
+        if budget_usd is not None:
+            body["budget_usd"] = budget_usd
+        return dict(self._request("PATCH", f"/api/projects/{project_id}", json=body))
 
     # Artifacts
     def list_artifacts(
@@ -179,6 +207,55 @@ class StudioAPIClient:
     def get_llm_status(self) -> dict[str, Any]:
         return dict(self._request("GET", "/api/llm/status"))
 
+    def update_llm_config(
+        self,
+        *,
+        local_only: bool | None = None,
+        prefer_cloud_default: bool | None = None,
+        cloud_tasks: list[str] | None = None,
+        cloud_provider: str | None = None,
+        cloud_default_model: str | None = None,
+        cloud_base_url: str | None = None,
+        cloud_api_key: str | None = None,
+        ollama_default_model: str | None = None,
+        ollama_writing_model: str | None = None,
+        ollama_fast_model: str | None = None,
+        gemini_default_model: str | None = None,
+        gemini_api_key: str | None = None,
+        max_budget_usd: float | None = None,
+        llm_timeout_seconds: float | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if local_only is not None:
+            body["local_only"] = local_only
+        if prefer_cloud_default is not None:
+            body["prefer_cloud_default"] = prefer_cloud_default
+        if cloud_tasks is not None:
+            body["cloud_tasks"] = cloud_tasks
+        if cloud_provider is not None:
+            body["cloud_provider"] = cloud_provider
+        if cloud_default_model is not None:
+            body["cloud_default_model"] = cloud_default_model
+        if cloud_base_url is not None:
+            body["cloud_base_url"] = cloud_base_url
+        if cloud_api_key:
+            body["cloud_api_key"] = cloud_api_key
+        if ollama_default_model is not None:
+            body["ollama_default_model"] = ollama_default_model
+        if ollama_writing_model is not None:
+            body["ollama_writing_model"] = ollama_writing_model
+        if ollama_fast_model is not None:
+            body["ollama_fast_model"] = ollama_fast_model
+        if gemini_default_model is not None:
+            body["gemini_default_model"] = gemini_default_model
+        if gemini_api_key:
+            body["gemini_api_key"] = gemini_api_key
+        if max_budget_usd is not None:
+            body["max_budget_usd"] = max_budget_usd
+        if llm_timeout_seconds is not None:
+            body["llm_timeout_seconds"] = llm_timeout_seconds
+        return dict(self._request("PATCH", "/api/llm/config", json=body))
+
     def get_project_usage(self, project_id: str) -> dict[str, Any]:
         return dict(self._request("GET", f"/api/projects/{project_id}/usage"))
 
@@ -198,7 +275,14 @@ class StudioAPIClient:
             "max_results_per_query": max_results_per_query,
             "synthesize_with_llm": synthesize_with_llm,
         }
-        return dict(self._request("POST", f"/api/projects/{project_id}/research/run", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/research/run",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def list_research_sources(
         self,
@@ -228,7 +312,14 @@ class StudioAPIClient:
             "custom_claims": custom_claims,
             "request_research_approval": request_research_approval,
         }
-        return dict(self._request("POST", f"/api/projects/{project_id}/fact-check/run", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/fact-check/run",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def list_claims(
         self,
@@ -257,7 +348,14 @@ class StudioAPIClient:
             "max_results": max_results,
             "analyze_with_llm": analyze_with_llm,
         }
-        return dict(self._request("POST", f"/api/projects/{project_id}/competitors/run", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/competitors/run",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def list_competitors(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/competitors")
@@ -278,7 +376,12 @@ class StudioAPIClient:
             "request_script_approval": request_script_approval,
         }
         return dict(
-            self._request("POST", f"/api/projects/{project_id}/scripts/generate", json=body)
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/scripts/generate",
+                json=body,
+                timeout=self._long_timeout,
+            )
         )
 
     def get_script(self, project_id: str) -> dict[str, Any] | None:
@@ -318,7 +421,12 @@ class StudioAPIClient:
             "require_approved_script": require_approved_script,
         }
         return dict(
-            self._request("POST", f"/api/projects/{project_id}/storyboard/generate", json=body)
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/storyboard/generate",
+                json=body,
+                timeout=self._long_timeout,
+            )
         )
 
     def list_scenes(self, project_id: str) -> list[dict[str, Any]]:
@@ -339,7 +447,14 @@ class StudioAPIClient:
             "max_results_per_query": max_results_per_query,
             "auto_approve": auto_approve,
         }
-        return dict(self._request("POST", f"/api/projects/{project_id}/workflows/start", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/workflows/start",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def list_project_workflows(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/workflows")
@@ -361,7 +476,14 @@ class StudioAPIClient:
             "reviewer": reviewer,
             "comments": comments,
         }
-        return dict(self._request("POST", f"/api/workflows/{run_id}/resume", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/workflows/{run_id}/resume",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def cancel_workflow(self, run_id: str) -> dict[str, Any]:
         return dict(self._request("POST", f"/api/workflows/{run_id}/cancel"))
@@ -383,7 +505,14 @@ class StudioAPIClient:
             "run_qa": run_qa,
             "request_assets_approval": request_assets_approval,
         }
-        return dict(self._request("POST", f"/api/projects/{project_id}/assets/generate", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/assets/generate",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def run_asset_qa(
         self,
@@ -422,7 +551,10 @@ class StudioAPIClient:
     def generate_youtube_metadata(self, project_id: str) -> dict[str, Any]:
         return dict(
             self._request(
-                "POST", f"/api/projects/{project_id}/production/youtube-metadata", json={}
+                "POST",
+                f"/api/projects/{project_id}/production/youtube-metadata",
+                json={},
+                timeout=self._long_timeout,
             )
         )
 
@@ -438,7 +570,12 @@ class StudioAPIClient:
             "request_final_approval": request_final_approval,
         }
         return dict(
-            self._request("POST", f"/api/projects/{project_id}/production/package", json=body)
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/production/package",
+                json=body,
+                timeout=self._long_timeout,
+            )
         )
 
     def get_latest_production_export(self, project_id: str) -> dict[str, Any] | None:
@@ -466,7 +603,14 @@ class StudioAPIClient:
         use_llm_judge: bool = False,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"use_llm_judge": use_llm_judge}
-        return dict(self._request("POST", f"/api/projects/{project_id}/evaluations/run", json=body))
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/evaluations/run",
+                json=body,
+                timeout=self._long_timeout,
+            )
+        )
 
     def list_evaluations(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/evaluations")

@@ -166,6 +166,11 @@ class GeminiProvider(BaseLLMProvider):
             is_cloud=self.is_cloud,
             available=True,
             base_url=self._base_url,
-            models=[],
+            models=[
+                "gemini-2.5-flash",
+                "gemini-2.5-pro",
+                "gemini-2.5-flash-lite",
+                "gemini-2.0-flash",
+            ],
             error=None,
         )

@@ -22,19 +22,34 @@ class Settings(BaseSettings):
     # API & Model endpoints
     API_BASE_URL: str = "http://127.0.0.1:8000"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_DEFAULT_MODEL: str = "qwen2.5-coder:14b"
+    OLLAMA_DEFAULT_MODEL: str = "qwen3.5:9b"
     OLLAMA_WRITING_MODEL: str | None = None
     OLLAMA_FAST_MODEL: str | None = None
 
-    # Optional Cloud LLM fallback (disabled by default via LOCAL_ONLY=True)
+    # Optional Cloud LLM providers (disabled by default via LOCAL_ONLY=True)
+    # Supported providers: "gemini", "openai", "anthropic", "openai_compatible"
+    PREFER_CLOUD_DEFAULT: bool = False
+    CLOUD_TASKS: list[str] = Field(default_factory=list)
     CLOUD_LLM_PROVIDER: str = "gemini"
+    CLOUD_API_KEY: str | None = None
+    CLOUD_BASE_URL: str | None = None
+    CLOUD_DEFAULT_MODEL: str | None = None
+
     GEMINI_API_KEY: str | None = None
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
     GEMINI_DEFAULT_MODEL: str = "gemini-2.5-flash"
 
+    OPENAI_API_KEY: str | None = None
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_DEFAULT_MODEL: str = "gpt-4.1-mini"
+
+    ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_BASE_URL: str = "https://api.anthropic.com/v1"
+    ANTHROPIC_DEFAULT_MODEL: str = "claude-sonnet-4-20250514"
+
     # LLM Execution & Budget Guardrails
     MAX_BUDGET_USD: float = Field(default=0.0, ge=0.0)
-    LLM_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0.0)
+    LLM_TIMEOUT_SECONDS: float = Field(default=180.0, gt=0.0)
     LLM_MAX_RETRIES: int = Field(default=2, ge=0, le=5)
     LLM_RETRY_BASE_DELAY_SECONDS: float = Field(default=0.5, ge=0.0)
     LLM_STRUCTURED_MAX_REPAIRS: int = Field(default=2, ge=0, le=4)
@@ -50,7 +65,7 @@ class Settings(BaseSettings):
     YOUTUBE_MAX_COMPETITORS: int = Field(default=5, ge=1, le=20)
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_default_base_dir() / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

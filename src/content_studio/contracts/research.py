@@ -17,7 +17,7 @@ class ResearchFindingItem(BaseModel):
 class ResearchSynthesisOutput(BaseModel):
     executive_summary: str = Field(min_length=10)
     key_definitions: list[str] = Field(default_factory=list)
-    findings: list[ResearchFindingItem] = Field(default_factory=list)
+    findings: list[ResearchFindingItem] = Field(min_length=1)
     contradictions: list[str] = Field(default_factory=list)
     recommended_angles: list[str] = Field(default_factory=list)
     open_questions: list[str] = Field(default_factory=list)
