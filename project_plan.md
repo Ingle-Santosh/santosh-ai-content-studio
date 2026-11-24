@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 1 Complete / Ready for Milestone 2  
+**Status:** Development – Milestone 2 Complete / Ready for Milestone 3  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -467,9 +467,9 @@ Use SQLite initially via `aiosqlite` with async SQLAlchemy 2.x and Alembic migra
 | `workflow_runs` | Workflow execution records and LangGraph `thread_id` tracking | M1 (Implemented) |
 | `artifacts` | Versioned artifact metadata, relative paths, status, and SHA-256 checksums | M1 (Implemented) |
 | `llm_usage_logs` | Token, cost, and latency tracking per node/provider/model | M1 (Implemented) |
-| `approvals` | Human approval gate records, decisions, and reviewer comments | M2 |
-| `channel_guidelines` | Reusable, configurable channel preferences and brand rules | M2 |
-| `agent_runs` | Per-agent/node execution audit trail linked to `workflow_runs` | M2 |
+| `approvals` | Human approval gate records, decisions, and reviewer comments | M2 (Implemented) |
+| `channel_guidelines` | Reusable, configurable channel preferences and brand rules | M2 (Implemented) |
+| `agent_runs` | Per-agent/node execution audit trail linked to `workflow_runs` | M2 (Implemented) |
 | `sources` | Research source metadata and deduplication keys | M4 |
 | `research_documents` | Extracted webpage content metadata / references | M4 |
 | `research_findings` | Structured research findings linked to sources | M4 |
@@ -728,12 +728,12 @@ Tasks:
 
 Tasks:
 
-- Add shared operational entities (`approvals`, `channel_guidelines`, `agent_runs`) and Alembic migration `0002_*`.
-- Add repositories and Pydantic schemas for approvals, channel guidelines, and agent runs.
-- Build `ArtifactService` coordinating `ArtifactStore` (filesystem) and `ArtifactRepository` (DB metadata + SHA-256 checksums + versioning + superseding).
-- Add project artifacts API (`/api/projects/{project_id}/artifacts`) and channel guidelines API (`/api/guidelines`).
-- Add Project Workspace page in Streamlit (`frontend/pages/`) with project-level artifact browsing and channel guidelines settings.
-- Add database, service, and API integration tests.
+- [x] Add shared operational entities (`approvals`, `channel_guidelines`, `agent_runs`) and Alembic migration `0002_shared_persistence.py`.
+- [x] Add repositories and Pydantic schemas for approvals, channel guidelines, and agent runs.
+- [x] Build `ArtifactService` coordinating `ArtifactStore` (filesystem) and `ArtifactRepository` (DB metadata + SHA-256 checksums + versioning + superseding).
+- [x] Add project artifacts API (`/api/projects/{project_id}/artifacts`), channel guidelines API (`/api/guidelines`), and approvals API (`/api/approvals`).
+- [x] Add Project Workspace and Settings pages in Streamlit (`frontend/pages/`) with project-level artifact browsing, checksum verification, approvals, and channel guidelines editor.
+- [x] Add database, migration roundtrip, service, and API integration tests.
 
 **Acceptance criteria:**
 
@@ -1153,16 +1153,11 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 1 is complete. The next milestone is **Milestone 2 – Shared Persistence and Artifact Management**.
+Milestone 2 is complete. The next milestone is **Milestone 3 – Hybrid LLM and Provider Layer**.
 
-- [x] Verify Python 3.12 (`3.12.13`) and `uv` environment (`uv.lock` / `.venv`).
-- [x] Initial Alembic migration `0001_initial_schema.py` is already present.
-- [x] Configure `.env` from `.env.example`.
-- [x] Apply the migration (`uv run alembic upgrade head`).
-- [x] Verify FastAPI (`/health`, `/docs`, `/api/projects`) and Streamlit (`frontend/Home.py`).
-- [x] Run Pytest and Ruff (`check` + `format --check`).
-- [x] Commit the working Milestone 1 foundation to Git.
-- [ ] Begin Milestone 2 (Shared Persistence & Artifact Management).
+- [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
+- [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
+- [ ] Begin Milestone 3 – Hybrid LLM and Provider Layer (common LLM provider interface, Ollama adapter, optional gated cloud adapter, task-based model router, structured-output validation, token/cost/latency logging).
 
 ### Initial Commands
 

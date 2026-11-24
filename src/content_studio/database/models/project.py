@@ -9,6 +9,8 @@ from content_studio.database.models.enums import ProjectStatus
 from content_studio.database.session import Base
 
 if TYPE_CHECKING:
+    from content_studio.database.models.agent_run import AgentRun
+    from content_studio.database.models.approval import Approval
     from content_studio.database.models.artifact import Artifact
     from content_studio.database.models.llm_usage_log import LLMUsageLog
     from content_studio.database.models.workflow_run import WorkflowRun
@@ -46,5 +48,11 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     usage_logs: Mapped[list["LLMUsageLog"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    approvals: Mapped[list["Approval"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    agent_runs: Mapped[list["AgentRun"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
