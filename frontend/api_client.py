@@ -324,3 +324,96 @@ class StudioAPIClient:
     def list_scenes(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/storyboard/scenes")
         return list(payload.get("items", []))
+
+    # LangGraph Workflows
+    def start_workflow(
+        self,
+        project_id: str,
+        *,
+        seed_urls: list[str] | None = None,
+        max_results_per_query: int = 5,
+        auto_approve: bool | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "seed_urls": seed_urls,
+            "max_results_per_query": max_results_per_query,
+            "auto_approve": auto_approve,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/workflows/start", json=body))
+
+    def list_project_workflows(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/workflows")
+        return list(payload.get("items", []))
+
+    def get_workflow_status(self, run_id: str) -> dict[str, Any]:
+        return dict(self._request("GET", f"/api/workflows/{run_id}"))
+
+    def resume_workflow(
+        self,
+        run_id: str,
+        *,
+        decision: str,
+        reviewer: str = "Creator",
+        comments: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "decision": decision,
+            "reviewer": reviewer,
+            "comments": comments,
+        }
+        return dict(self._request("POST", f"/api/workflows/{run_id}/resume", json=body))
+
+    def cancel_workflow(self, run_id: str) -> dict[str, Any]:
+        return dict(self._request("POST", f"/api/workflows/{run_id}/cancel"))
+
+    # Visual & Code Assets
+    def plan_assets(self, project_id: str) -> dict[str, Any]:
+        return dict(self._request("POST", f"/api/projects/{project_id}/assets/plan"))
+
+    def generate_assets(
+        self,
+        project_id: str,
+        *,
+        asset_keys: list[str] | None = None,
+        run_qa: bool = True,
+        request_assets_approval: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "asset_keys": asset_keys,
+            "run_qa": run_qa,
+            "request_assets_approval": request_assets_approval,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/assets/generate", json=body))
+
+    def run_asset_qa(
+        self,
+        project_id: str,
+        *,
+        request_assets_approval: bool = True,
+    ) -> dict[str, Any]:
+        body = {"request_assets_approval": request_assets_approval}
+        return dict(self._request("POST", f"/api/projects/{project_id}/assets/qa", json=body))
+
+    def upload_screenshot(
+        self,
+        project_id: str,
+        *,
+        filename: str,
+        content_base64: str,
+        captured_by: str,
+        source_url: str | None = None,
+        scene_number: int | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "filename": filename,
+            "content_base64": content_base64,
+            "provenance": {
+                "source_origin": "user_upload",
+                "captured_by": captured_by,
+                "source_url": source_url or None,
+            },
+            "scene_number": scene_number,
+        }
+        return dict(
+            self._request("POST", f"/api/projects/{project_id}/assets/screenshots", json=body)
+        )

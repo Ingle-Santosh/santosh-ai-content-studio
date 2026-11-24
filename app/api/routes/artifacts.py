@@ -1,6 +1,7 @@
+import mimetypes
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.api.schemas.artifact import (
     ArtifactContentResponse,
@@ -100,6 +101,27 @@ async def get_artifact_content(
         artifact=ArtifactResponse.model_validate(artifact),
         content=text,
     )
+
+
+@router.get("/{artifact_id}/download")
+async def download_artifact(
+    project_id: str,
+    artifact_id: str,
+    service: Annotated[ArtifactService, Depends(get_artifact_service)],
+) -> Response:
+    try:
+        artifact, raw_bytes = await service.read_artifact_bytes(project_id, artifact_id)
+    except (ResourceNotFoundError, ArtifactFileMissingError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    mime_type = (artifact.metadata_json or {}).get("mime_type") or (
+        mimetypes.guess_type(artifact.name)[0] or "application/octet-stream"
+    )
+    headers = {
+        "Content-Disposition": f'attachment; filename="{artifact.name}"',
+        "X-Checksum-SHA256": artifact.checksum_sha256 or "",
+    }
+    return Response(content=raw_bytes, media_type=mime_type, headers=headers)
 
 
 @router.get("/{artifact_id}/verify", response_model=ArtifactIntegrityResponse)

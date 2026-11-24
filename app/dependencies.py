@@ -19,21 +19,26 @@ from content_studio.database.repositories import (
     UsageRepository,
 )
 from content_studio.database.session import get_db_session
+from content_studio.providers.image import BaseImageProvider, LocalSVGImageProvider
 from content_studio.providers.llm import ModelRouter
 from content_studio.providers.search import BaseSearchProvider, build_search_provider
 from content_studio.providers.youtube import BaseYouTubeProvider, build_youtube_provider
 from content_studio.services import (
     ApprovalService,
     ArtifactService,
+    AssetGenerationService,
+    AssetQAService,
     ChannelGuidelineService,
     CompetitorService,
     FactCheckService,
     ResearchService,
     ScriptwriterService,
     StoryboardService,
+    TopicStrategistService,
     WebExtractor,
 )
 from content_studio.storage.artifact_store import ArtifactStore
+from content_studio.workflows import PipelineServices, WorkflowOrchestrator
 
 
 def get_settings() -> Settings:
@@ -289,5 +294,90 @@ def get_storyboard_service(
         guideline_service=guideline_service,
         artifact_service=artifact_service,
         model_router=model_router,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_topic_strategist_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    guideline_service: Annotated[ChannelGuidelineService, Depends(get_guideline_service)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> TopicStrategistService:
+    return TopicStrategistService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        guideline_service=guideline_service,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        approval_service=approval_service,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_image_provider() -> BaseImageProvider:
+    return LocalSVGImageProvider()
+
+
+def get_asset_generation_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    image_provider: Annotated[BaseImageProvider, Depends(get_image_provider)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> AssetGenerationService:
+    return AssetGenerationService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        scene_repo=scene_repo,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        image_provider=image_provider,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_asset_qa_service(
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+) -> AssetQAService:
+    return AssetQAService(
+        artifact_service=artifact_service,
+        approval_service=approval_service,
+    )
+
+
+def get_workflow_orchestrator(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    run_repo: Annotated[RunRepository, Depends(get_run_repository)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+    topic_strategist: Annotated[TopicStrategistService, Depends(get_topic_strategist_service)],
+    research_service: Annotated[ResearchService, Depends(get_research_service)],
+    competitor_service: Annotated[CompetitorService, Depends(get_competitor_service)],
+    fact_check_service: Annotated[FactCheckService, Depends(get_fact_check_service)],
+    scriptwriter_service: Annotated[ScriptwriterService, Depends(get_scriptwriter_service)],
+    storyboard_service: Annotated[StoryboardService, Depends(get_storyboard_service)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+) -> WorkflowOrchestrator:
+    services = PipelineServices(
+        topic_strategist=topic_strategist,
+        research=research_service,
+        competitor=competitor_service,
+        fact_checker=fact_check_service,
+        scriptwriter=scriptwriter_service,
+        storyboard=storyboard_service,
+        approval=approval_service,
+    )
+    return WorkflowOrchestrator(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        run_repo=run_repo,
+        services=services,
         agent_run_repo=agent_run_repo,
     )
