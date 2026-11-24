@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.api.routes import (
     approvals_router,
     artifacts_router,
+    assets_router,
     competitors_router,
     fact_check_router,
     guidelines_router,
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     application.include_router(competitors_router)
     application.include_router(scripts_router)
     application.include_router(storyboard_router)
+    application.include_router(assets_router)
     application.include_router(workflows_router)
     return application
 

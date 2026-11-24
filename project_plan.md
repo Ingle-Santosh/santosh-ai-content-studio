@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 7 Complete / Ready for Milestone 8  
+**Status:** Development – Milestone 8 Complete / Ready for Milestone 9  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -843,16 +843,14 @@ Tasks:
 
 Tasks:
 
-- Implement asset planner.
-- Implement Mermaid diagram generation.
-- Implement SVG rendering.
-- Implement HTML animation templates.
-- Integrate image provider.
-- Implement authorized screenshot capture.
-- Implement screenshot annotations.
-- Implement code demo generation.
-- Build isolated code execution.
-- Implement asset QA.
+- [x] Implement asset planner (`AssetGenerationService.plan_assets`) mapping storyboard scenes to categorized asset plans (`04_visuals/asset_plan.json`).
+- [x] Implement Mermaid diagram generation, deterministic syntax validation, and SVG rendering (`mmdc` when installed + pure-Python local SVG renderer).
+- [x] Implement sanitized, self-contained HTML/CSS/JS interactive animation templates (`templates/animations/step_walkthrough.html`) with strict XSS/script checks.
+- [x] Integrate provider-independent image layer (`BaseImageProvider`, zero-cost `LocalSVGImageProvider`).
+- [x] Implement provenance-enforced screenshot upload validation (magic-byte check + mandatory `ScreenshotProvenance`) and non-destructive SVG annotation overlays.
+- [x] Implement Python & SQLite SQL code demo generation with AST safety guardrails and isolated subprocess/in-memory validation (`code_sandbox.py`).
+- [x] Implement deterministic Asset QA (`AssetQAService`) blocking Gate 4 approval when checksums, sanitization, provenance, or isolated code execution fail, with independent per-asset retry.
+- [x] Expose `/api/projects/{project_id}/assets/*` + binary `/artifacts/{id}/download` routes and Streamlit Assets tab.
 
 **Acceptance criteria:**
 
@@ -1146,7 +1144,7 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 7 is complete. The next milestone is **Milestone 8 – Visual Asset Generation**.
+Milestone 8 is complete. The next milestone is **Milestone 9 – Production Package and YouTube Strategy**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
@@ -1155,7 +1153,8 @@ Milestone 7 is complete. The next milestone is **Milestone 8 – Visual Asset Ge
 - [x] Milestone 5 – Fact Checking & Competitor Analysis (`0004_fact_check_competitors`, evidence-grounded `FactCheckService`, YouTube public metadata & `CompetitorService`, Gate 2 research approval creation, Fact Checking & Competitors Workspace tabs).
 - [x] Milestone 6 – Scriptwriting & Storyboarding (`0005_scripts_and_storyboard`, guideline-driven `ScriptwriterService`, deterministic `validate_script_sections`, Gate 3 script approval, `StoryboardService` with scene-level asset requirements, Script & Storyboard Workspace tabs).
 - [x] Milestone 7 – LangGraph Orchestration (`langgraph` + `AsyncSqliteSaver` in `data/checkpoints.db`, `TopicStrategistService`, parallel Research + Competitor fan-out, native `interrupt()`/`Command(resume=...)` across Gates 1–3, `WorkflowOrchestrator`, Workflow API, and Approval Center UI).
-- [ ] Begin Milestone 8 – Visual Asset Generation (Asset Planner, Mermaid diagrams + SVG rendering, HTML/CSS/JS educational animations, image/screenshot handling, code demo generation + isolated execution validation, and deterministic Asset QA).
+- [x] Milestone 8 – Visual Asset Generation (`AssetGenerationService`, Mermaid+SVG renderer, sanitized HTML animations, `LocalSVGImageProvider`, provenance screenshot uploads & annotations, isolated Python/SQL code sandbox, deterministic `AssetQAService` & Gate 4 approval).
+- [ ] Begin Milestone 9 – Production Package and YouTube Strategy (Production Agent editing instructions, scene sequence & asset manifest, YouTube Strategist titles/description with 8+ years experience/chapters/tags/thumbnail concepts, Gate 5 approval, and deterministic ZIP export bundle — manual publishing only).
 
 ### Initial Commands
 

@@ -7,6 +7,8 @@ from content_studio.services.artifact_service import (
     ProjectNotFoundError,
     ResourceNotFoundError,
 )
+from content_studio.services.asset_qa_service import AssetQAService
+from content_studio.services.asset_service import AssetGenerationService
 from content_studio.services.competitor_service import CompetitorService
 from content_studio.services.fact_check_service import FactCheckService
 from content_studio.services.guideline_service import (
@@ -39,6 +41,8 @@ __all__ = [
     "ArtifactIntegrityReport",
     "ArtifactNotFoundError",
     "ArtifactService",
+    "AssetGenerationService",
+    "AssetQAService",
     "ChannelGuidelineService",
     "CompetitorService",
     "DEFAULT_CHANNEL_NAME",

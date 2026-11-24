@@ -12,6 +12,15 @@ from app.api.schemas.artifact import (
     ArtifactResponse,
     ArtifactStatusUpdateRequest,
 )
+from app.api.schemas.asset import (
+    AssetGenerateRequest,
+    AssetGenerateResponse,
+    AssetPlanResponse,
+    AssetQAResponse,
+    AssetQARunRequest,
+    ScreenshotUploadRequest,
+    ScreenshotUploadResponse,
+)
 from app.api.schemas.competitor import (
     CompetitorRunRequest,
     CompetitorRunResponse,
@@ -83,6 +92,11 @@ __all__ = [
     "ArtifactListResponse",
     "ArtifactResponse",
     "ArtifactStatusUpdateRequest",
+    "AssetGenerateRequest",
+    "AssetGenerateResponse",
+    "AssetPlanResponse",
+    "AssetQAResponse",
+    "AssetQARunRequest",
     "ChannelGuidelineListResponse",
     "ChannelGuidelineResponse",
     "ChannelGuidelineUpsertRequest",
@@ -114,6 +128,8 @@ __all__ = [
     "ScriptManualRevisionRequest",
     "ScriptResponse",
     "ScriptVersionResponse",
+    "ScreenshotUploadRequest",
+    "ScreenshotUploadResponse",
     "SourceListResponse",
     "SourceResponse",
     "StoryboardGenerateRequest",

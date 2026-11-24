@@ -19,12 +19,15 @@ from content_studio.database.repositories import (
     UsageRepository,
 )
 from content_studio.database.session import get_db_session
+from content_studio.providers.image import BaseImageProvider, LocalSVGImageProvider
 from content_studio.providers.llm import ModelRouter
 from content_studio.providers.search import BaseSearchProvider, build_search_provider
 from content_studio.providers.youtube import BaseYouTubeProvider, build_youtube_provider
 from content_studio.services import (
     ApprovalService,
     ArtifactService,
+    AssetGenerationService,
+    AssetQAService,
     ChannelGuidelineService,
     CompetitorService,
     FactCheckService,
@@ -312,6 +315,40 @@ def get_topic_strategist_service(
         model_router=model_router,
         approval_service=approval_service,
         agent_run_repo=agent_run_repo,
+    )
+
+
+def get_image_provider() -> BaseImageProvider:
+    return LocalSVGImageProvider()
+
+
+def get_asset_generation_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    image_provider: Annotated[BaseImageProvider, Depends(get_image_provider)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> AssetGenerationService:
+    return AssetGenerationService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        scene_repo=scene_repo,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        image_provider=image_provider,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_asset_qa_service(
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+) -> AssetQAService:
+    return AssetQAService(
+        artifact_service=artifact_service,
+        approval_service=approval_service,
     )
 
 

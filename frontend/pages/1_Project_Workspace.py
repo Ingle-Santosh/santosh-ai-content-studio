@@ -1,3 +1,5 @@
+import base64
+
 import streamlit as st
 
 from content_studio.config.settings import settings
@@ -43,6 +45,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
     tab_fact_check,
     tab_script,
     tab_storyboard,
+    tab_assets,
     tab_artifacts,
     tab_add,
     tab_approvals,
@@ -54,6 +57,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
         "Fact Checking",
         "Script",
         "Storyboard",
+        "Assets",
         "Artifacts Browser",
         "Add Artifact",
         "Approvals",
@@ -457,6 +461,71 @@ with tab_storyboard:
                         "Assets needed: "
                         + " | ".join(f"[{a['asset_type']}] {a['title']}" for a in assets)
                     )
+
+with tab_assets:
+    st.subheader("Visual & Code Asset Generation")
+    a_col1, a_col2, a_col3 = st.columns(3)
+    if a_col1.button("Plan Assets from Storyboard"):
+        try:
+            plan = client.plan_assets(project_id)
+            st.success(f"Planned {len(plan.get('items', []))} asset(s) from storyboard.")
+            st.json(plan.get("items", []))
+        except StudioAPIError as exc:
+            st.error(str(exc))
+
+    if a_col2.button("Generate All Planned Assets + QA", type="primary"):
+        with st.spinner("Generating diagrams, animations, visuals, and validated code demos..."):
+            try:
+                batch = client.generate_assets(
+                    project_id,
+                    run_qa=True,
+                    request_assets_approval=True,
+                )
+                st.success(
+                    f"Succeeded: {batch['succeeded_count']} | Failed: {batch['failed_count']} | "
+                    f"Skipped: {batch['skipped_count']}"
+                )
+                st.json(batch.get("outcomes", []))
+            except StudioAPIError as exc:
+                st.error(str(exc))
+
+    if a_col3.button("Run Asset QA Gate"):
+        try:
+            qa = client.run_asset_qa(project_id, request_assets_approval=True)
+            if qa["passed"]:
+                st.success(f"Asset QA PASSED ({qa['passed_count']}/{qa['total_assets']} verified).")
+            else:
+                st.error("Asset QA FAILED: " + " | ".join(qa.get("blocking_issues", [])))
+        except StudioAPIError as exc:
+            st.error(str(exc))
+
+    st.divider()
+    st.markdown("### Upload Screenshot (With Mandatory Provenance)")
+    with st.form("upload_screenshot_form", clear_on_submit=True):
+        shot_file = st.file_uploader(
+            "PNG / JPEG / WEBP Screenshot", type=["png", "jpg", "jpeg", "webp"]
+        )
+        sc1, sc2 = st.columns(2)
+        captured_by = sc1.text_input("Captured By", value="Santosh")
+        shot_url = sc2.text_input("Source URL (optional)", placeholder="https://...")
+        shot_scene = st.number_input("Scene Number (optional)", min_value=1, value=1)
+        if st.form_submit_button("Upload Provenance Screenshot"):
+            if shot_file is None:
+                st.warning("Please choose an image file first.")
+            else:
+                encoded = base64.b64encode(shot_file.getvalue()).decode("ascii")
+                try:
+                    uploaded = client.upload_screenshot(
+                        project_id,
+                        filename=shot_file.name,
+                        content_base64=encoded,
+                        captured_by=captured_by.strip() or "Creator",
+                        source_url=shot_url.strip() or None,
+                        scene_number=int(shot_scene),
+                    )
+                    st.success(f"Stored verified screenshot at `{uploaded['relative_path']}`.")
+                except StudioAPIError as exc:
+                    st.error(str(exc))
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)

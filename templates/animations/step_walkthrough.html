@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__TITLE__ — Santosh Analytics</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .stage {
+      width: 100%;
+      max-width: 960px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+    .brand {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 28px; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 15px; }
+    .timeline {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .pill.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: 700;
+      transform: translateY(-2px);
+    }
+    .panel {
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      min-height: 180px;
+      transition: opacity 0.3s ease;
+    }
+    .step-title { font-size: 20px; color: var(--accent); margin-bottom: 10px; }
+    .step-desc { font-size: 16px; line-height: 1.6; color: var(--text); }
+    .highlight {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: #172554;
+      border-left: 4px solid var(--accent);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      color: #e0f2fe;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    button.ctrl {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button.ctrl.primary {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div class="brand">Santosh Analytics · Interactive Visual</div>
+    <h1>__TITLE__</h1>
+    <p class="subtitle">__SUBTITLE__</p>
+    <div id="timeline" class="timeline"></div>
+    <section class="panel">
+      <h2 id="step-title" class="step-title"></h2>
+      <p id="step-desc" class="step-desc"></p>
+      <pre id="step-highlight" class="highlight" style="display:none;"></pre>
+    </section>
+    <div class="controls">
+      <button id="btn-prev" class="ctrl" type="button">Previous</button>
+      <button id="btn-play" class="ctrl primary" type="button">Play</button>
+      <button id="btn-next" class="ctrl" type="button">Next</button>
+      <button id="btn-reset" class="ctrl" type="button">Reset</button>
+    </div>
+  </main>
+  <script>
+    const STEPS = __STEPS_JSON__;
+    let current = 0;
+    let timer = null;
+
+    const timelineEl = document.getElementById("timeline");
+    const titleEl = document.getElementById("step-title");
+    const descEl = document.getElementById("step-desc");
+    const hlEl = document.getElementById("step-highlight");
+    const playBtn = document.getElementById("btn-play");
+
+    function render() {
+      timelineEl.textContent = "";
+      STEPS.forEach((step, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "pill" + (idx === current ? " active" : "");
+        btn.textContent = (idx + 1) + ". " + step.label;
+        btn.addEventListener("click", () => { current = idx; render(); });
+        timelineEl.appendChild(btn);
+      });
+      const active = STEPS[current];
+      titleEl.textContent = "Step " + (current + 1) + ": " + active.label;
+      descEl.textContent = active.description;
+      if (active.highlight_text) {
+        hlEl.style.display = "block";
+        hlEl.textContent = active.highlight_text;
+      } else {
+        hlEl.style.display = "none";
+        hlEl.textContent = "";
+      }
+    }
+
+    document.getElementById("btn-prev").addEventListener("click", () => {
+      current = (current - 1 + STEPS.length) % STEPS.length;
+      render();
+    });
+    document.getElementById("btn-next").addEventListener("click", () => {
+      current = (current + 1) % STEPS.length;
+      render();
+    });
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "Play"; }
+      current = 0;
+      render();
+    });
+    playBtn.addEventListener("click", () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        playBtn.textContent = "Play";
+      } else {
+        playBtn.textContent = "Pause";
+        timer = setInterval(() => {
+          current = (current + 1) % STEPS.length;
+          render();
+        }, 2500);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
