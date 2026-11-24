@@ -417,3 +417,43 @@ class StudioAPIClient:
         return dict(
             self._request("POST", f"/api/projects/{project_id}/assets/screenshots", json=body)
         )
+
+    # Production Package & YouTube Strategy
+    def generate_youtube_metadata(self, project_id: str) -> dict[str, Any]:
+        return dict(
+            self._request(
+                "POST", f"/api/projects/{project_id}/production/youtube-metadata", json={}
+            )
+        )
+
+    def build_production_package(
+        self,
+        project_id: str,
+        *,
+        include_youtube_metadata: bool = True,
+        request_final_approval: bool = True,
+    ) -> dict[str, Any]:
+        body = {
+            "include_youtube_metadata": include_youtube_metadata,
+            "request_final_approval": request_final_approval,
+        }
+        return dict(
+            self._request("POST", f"/api/projects/{project_id}/production/package", json=body)
+        )
+
+    def get_latest_production_export(self, project_id: str) -> dict[str, Any] | None:
+        try:
+            return dict(self._request("GET", f"/api/projects/{project_id}/production/latest"))
+        except StudioAPIError as exc:
+            if "HTTP 404" in str(exc):
+                return None
+            raise
+
+    def download_artifact_bytes(self, project_id: str, artifact_id: str) -> bytes:
+        url = f"{self._base_url}/api/projects/{project_id}/artifacts/{artifact_id}/download"
+        try:
+            resp = httpx.get(url, timeout=self._timeout)
+            resp.raise_for_status()
+            return resp.content
+        except httpx.HTTPError as exc:
+            raise StudioAPIError(f"Failed to download artifact: {exc}") from exc

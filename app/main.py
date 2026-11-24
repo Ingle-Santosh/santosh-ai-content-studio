@@ -12,6 +12,7 @@ from app.api.routes import (
     guidelines_router,
     health_router,
     llm_router,
+    production_router,
     projects_router,
     research_router,
     scripts_router,
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
     application.include_router(scripts_router)
     application.include_router(storyboard_router)
     application.include_router(assets_router)
+    application.include_router(production_router)
     application.include_router(workflows_router)
     return application
 

@@ -16,6 +16,7 @@ from content_studio.services.guideline_service import (
     DEFAULT_GUIDELINE_SLUG,
     ChannelGuidelineService,
 )
+from content_studio.services.production_service import ProductionService
 from content_studio.services.research_service import ResearchService
 from content_studio.services.script_service import (
     ResearchNotApprovedError,
@@ -33,6 +34,10 @@ from content_studio.services.web_extractor import (
     extract_domain,
     normalize_url,
 )
+from content_studio.services.youtube_strategy_service import (
+    YouTubeStrategyService,
+    format_timestamp,
+)
 
 __all__ = [
     "ApprovalNotFoundError",
@@ -49,6 +54,7 @@ __all__ = [
     "DEFAULT_GUIDELINE_SLUG",
     "ExtractedPage",
     "FactCheckService",
+    "ProductionService",
     "ProjectNotFoundError",
     "REQUIRED_SECTIONS",
     "ResearchNotApprovedError",
@@ -61,8 +67,10 @@ __all__ = [
     "TopicStrategistService",
     "WebExtractor",
     "WorkflowGateError",
+    "YouTubeStrategyService",
     "compute_url_hash",
     "extract_domain",
+    "format_timestamp",
     "normalize_url",
     "validate_script_sections",
 ]

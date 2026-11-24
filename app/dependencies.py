@@ -31,11 +31,13 @@ from content_studio.services import (
     ChannelGuidelineService,
     CompetitorService,
     FactCheckService,
+    ProductionService,
     ResearchService,
     ScriptwriterService,
     StoryboardService,
     TopicStrategistService,
     WebExtractor,
+    YouTubeStrategyService,
 )
 from content_studio.storage.artifact_store import ArtifactStore
 from content_studio.workflows import PipelineServices, WorkflowOrchestrator
@@ -349,6 +351,56 @@ def get_asset_qa_service(
     return AssetQAService(
         artifact_service=artifact_service,
         approval_service=approval_service,
+    )
+
+
+def get_youtube_strategy_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    script_repo: Annotated[ScriptRepository, Depends(get_script_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    competitor_repo: Annotated[CompetitorRepository, Depends(get_competitor_repository)],
+    guideline_service: Annotated[ChannelGuidelineService, Depends(get_guideline_service)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> YouTubeStrategyService:
+    return YouTubeStrategyService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        script_repo=script_repo,
+        scene_repo=scene_repo,
+        competitor_repo=competitor_repo,
+        guideline_service=guideline_service,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_production_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    script_repo: Annotated[ScriptRepository, Depends(get_script_repository)],
+    scene_repo: Annotated[SceneRepository, Depends(get_scene_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    youtube_strategy_service: Annotated[
+        YouTubeStrategyService, Depends(get_youtube_strategy_service)
+    ],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> ProductionService:
+    return ProductionService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        script_repo=script_repo,
+        scene_repo=scene_repo,
+        artifact_service=artifact_service,
+        youtube_strategy_service=youtube_strategy_service,
+        model_router=model_router,
+        approval_service=approval_service,
+        agent_run_repo=agent_run_repo,
     )
 
 

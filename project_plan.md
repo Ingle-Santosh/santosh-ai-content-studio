@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 8 Complete / Ready for Milestone 9  
+**Status:** Development – Milestone 9 Complete / Ready for Milestone 10  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -864,16 +864,11 @@ Tasks:
 
 Tasks:
 
-- Build production agent.
-- Generate editing instructions.
-- Generate scene sequence.
-- Generate asset manifest.
-- Generate title options.
-- Generate descriptions.
-- Generate thumbnail concepts.
-- Generate chapter suggestions.
-- Generate tags and supporting metadata.
-- Build ZIP export.
+- [x] Build Production service (`ProductionService`, `prompts/production/`) generating editing instructions, B-roll/overlay cues, recording & post-production checklists, timed scene sequence (`MM:SS`), and full asset manifest (`asset_manifest.json`).
+- [x] Build YouTube Strategist service (`YouTubeStrategyService`, `prompts/youtube_strategist/`) generating title options, description with deterministic Santosh Analytics bio-note enforcement (`8+ years of experience`), chapter timestamps, tags, hashtags, pinned comment, and thumbnail concepts.
+- [x] Build deterministic ZIP export bundle (`06_export/*_production_package.zip`) bundling `README_PRODUCTION.md`, `manifest.json`, script, storyboard, research, assets, and YouTube metadata — strictly `MANUAL_ONLY` (no automatic publishing).
+- [x] Create Gate 5 (`production_package`) human approval linked to the ZIP export artifact.
+- [x] Expose `/api/projects/{project_id}/production/*` routes and Streamlit Production tab with one-click ZIP download.
 
 **Acceptance criteria:**
 
@@ -1144,7 +1139,7 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 8 is complete. The next milestone is **Milestone 9 – Production Package and YouTube Strategy**.
+Milestone 9 is complete. The final milestone is **Milestone 10 – Evaluation and Hardening**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
@@ -1154,7 +1149,8 @@ Milestone 8 is complete. The next milestone is **Milestone 9 – Production Pack
 - [x] Milestone 6 – Scriptwriting & Storyboarding (`0005_scripts_and_storyboard`, guideline-driven `ScriptwriterService`, deterministic `validate_script_sections`, Gate 3 script approval, `StoryboardService` with scene-level asset requirements, Script & Storyboard Workspace tabs).
 - [x] Milestone 7 – LangGraph Orchestration (`langgraph` + `AsyncSqliteSaver` in `data/checkpoints.db`, `TopicStrategistService`, parallel Research + Competitor fan-out, native `interrupt()`/`Command(resume=...)` across Gates 1–3, `WorkflowOrchestrator`, Workflow API, and Approval Center UI).
 - [x] Milestone 8 – Visual Asset Generation (`AssetGenerationService`, Mermaid+SVG renderer, sanitized HTML animations, `LocalSVGImageProvider`, provenance screenshot uploads & annotations, isolated Python/SQL code sandbox, deterministic `AssetQAService` & Gate 4 approval).
-- [ ] Begin Milestone 9 – Production Package and YouTube Strategy (Production Agent editing instructions, scene sequence & asset manifest, YouTube Strategist titles/description with 8+ years experience/chapters/tags/thumbnail concepts, Gate 5 approval, and deterministic ZIP export bundle — manual publishing only).
+- [x] Milestone 9 – Production Package & YouTube Strategy (`YouTubeStrategyService`, `ProductionService`, timed scene sequence, asset manifest, Gate 5 approval, deterministic ZIP export bundle — `MANUAL_ONLY`).
+- [ ] Begin Milestone 10 – Evaluation and Hardening (configurable 7-dimension quality evaluation framework, structured JSON logging, global exception handlers, backup/restore service & CLI, representative regression tests, and operational docs).
 
 ### Initial Commands
 

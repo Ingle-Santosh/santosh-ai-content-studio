@@ -45,6 +45,13 @@ from app.api.schemas.llm import (
     ProjectUsageSummaryResponse,
     UsageLogResponse,
 )
+from app.api.schemas.production import (
+    LatestProductionExportResponse,
+    ProductionPackageBuildRequest,
+    ProductionPackageBuildResponse,
+    YouTubeMetadataGenerateRequest,
+    YouTubeMetadataGenerateResponse,
+)
 from app.api.schemas.project import (
     ProjectCreateRequest,
     ProjectListResponse,
@@ -111,6 +118,9 @@ __all__ = [
     "FactCheckRunResponse",
     "HealthResponse",
     "LLMStatusResponse",
+    "LatestProductionExportResponse",
+    "ProductionPackageBuildRequest",
+    "ProductionPackageBuildResponse",
     "ProjectCreateRequest",
     "ProjectListResponse",
     "ProjectResponse",
@@ -140,4 +150,6 @@ __all__ = [
     "WorkflowRunSnapshotResponse",
     "WorkflowRunSummaryResponse",
     "WorkflowStartRequest",
+    "YouTubeMetadataGenerateRequest",
+    "YouTubeMetadataGenerateResponse",
 ]
