@@ -22,7 +22,6 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
     db_path = tmp_path / "migration_test.db"
     db_url = f"sqlite+aiosqlite:///{db_path.as_posix()}"
 
-    # alembic/env.py pulls settings.resolved_database_url at runtime
     monkeypatch.setattr(settings, "DATABASE_URL", db_url)
     monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
     monkeypatch.setattr(settings, "PROJECTS_DIR", tmp_path / "projects")
@@ -44,14 +43,17 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
         "sources",
         "research_documents",
         "research_findings",
+        "claims",
+        "claim_sources",
+        "competitor_videos",
     }.issubset(tables_at_head)
 
-    command.downgrade(alembic_cfg, "0002_shared_persistence")
-    tables_at_0002 = _list_tables(db_path)
-    assert {"approvals", "channel_guidelines", "agent_runs"}.issubset(tables_at_0002)
-    assert "sources" not in tables_at_0002
-    assert "research_documents" not in tables_at_0002
-    assert "research_findings" not in tables_at_0002
+    command.downgrade(alembic_cfg, "0003_research_engine")
+    tables_at_0003 = _list_tables(db_path)
+    assert {"sources", "research_documents", "research_findings"}.issubset(tables_at_0003)
+    assert "claims" not in tables_at_0003
+    assert "claim_sources" not in tables_at_0003
+    assert "competitor_videos" not in tables_at_0003
 
     command.downgrade(alembic_cfg, "0001_initial_schema")
     tables_at_0001 = _list_tables(db_path)
@@ -59,11 +61,4 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
     assert "approvals" not in tables_at_0001
 
     command.upgrade(alembic_cfg, "head")
-    assert {
-        "approvals",
-        "channel_guidelines",
-        "agent_runs",
-        "sources",
-        "research_documents",
-        "research_findings",
-    }.issubset(_list_tables(db_path))
+    assert {"claims", "claim_sources", "competitor_videos"}.issubset(_list_tables(db_path))

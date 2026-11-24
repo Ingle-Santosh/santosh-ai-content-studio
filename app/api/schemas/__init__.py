@@ -12,6 +12,19 @@ from app.api.schemas.artifact import (
     ArtifactResponse,
     ArtifactStatusUpdateRequest,
 )
+from app.api.schemas.competitor import (
+    CompetitorRunRequest,
+    CompetitorRunResponse,
+    CompetitorVideoListResponse,
+    CompetitorVideoResponse,
+)
+from app.api.schemas.fact_check import (
+    ClaimListResponse,
+    ClaimResponse,
+    ClaimSourceResponse,
+    FactCheckRunRequest,
+    FactCheckRunResponse,
+)
 from app.api.schemas.guideline import (
     ChannelGuidelineListResponse,
     ChannelGuidelineResponse,
@@ -52,6 +65,15 @@ __all__ = [
     "ChannelGuidelineListResponse",
     "ChannelGuidelineResponse",
     "ChannelGuidelineUpsertRequest",
+    "ClaimListResponse",
+    "ClaimResponse",
+    "ClaimSourceResponse",
+    "CompetitorRunRequest",
+    "CompetitorRunResponse",
+    "CompetitorVideoListResponse",
+    "CompetitorVideoResponse",
+    "FactCheckRunRequest",
+    "FactCheckRunResponse",
     "HealthResponse",
     "LLMStatusResponse",
     "ProjectCreateRequest",

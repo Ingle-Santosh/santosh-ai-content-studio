@@ -36,8 +36,15 @@ meta_cols[1].metric("Stage", project.get("current_stage") or "—")
 meta_cols[2].metric("Budget (USD)", f"${project.get('budget_usd', 0.0):.2f}")
 meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 
-tab_research, tab_artifacts, tab_add, tab_approvals = st.tabs(
-    ["Research", "Artifacts Browser", "Add Artifact", "Approvals"]
+tab_research, tab_competitors, tab_fact_check, tab_artifacts, tab_add, tab_approvals = st.tabs(
+    [
+        "Research",
+        "Competitors",
+        "Fact Checking",
+        "Artifacts Browser",
+        "Add Artifact",
+        "Approvals",
+    ]
 )
 
 with tab_research:
@@ -116,6 +123,123 @@ with tab_research:
                 )
                 if src.get("error_message"):
                     st.caption(f"Extraction note: {src['error_message']}")
+
+with tab_competitors:
+    st.subheader("Competitor YouTube Analysis")
+    with st.form("run_competitors_form"):
+        comp_queries_raw = st.text_area(
+            "YouTube Search Queries (optional, one per line; defaults to project topic)",
+            height=70,
+        )
+        comp_urls_raw = st.text_area(
+            "Specific YouTube Video URLs (optional, one per line)",
+            height=70,
+            placeholder="https://www.youtube.com/watch?v=...",
+        )
+        c_col1, c_col2 = st.columns(2)
+        comp_max = c_col1.slider("Max Videos", min_value=1, max_value=15, value=5)
+        comp_llm = c_col2.checkbox("Generate Content-Gap Analysis with LLM", value=True)
+        if st.form_submit_button("Run Competitor Analysis", type="primary"):
+            c_queries = [
+                line.strip() for line in comp_queries_raw.splitlines() if line.strip()
+            ] or None
+            c_urls = [line.strip() for line in comp_urls_raw.splitlines() if line.strip()] or None
+            with st.spinner("Collecting public YouTube metadata and analyzing content gaps..."):
+                try:
+                    comp_report = client.run_competitor_analysis(
+                        project_id,
+                        queries=c_queries,
+                        video_urls=c_urls,
+                        max_results=comp_max,
+                        analyze_with_llm=comp_llm,
+                    )
+                    st.success(f"Analyzed {comp_report['videos_analyzed']} competitor videos.")
+                    if comp_report.get("gap_analysis"):
+                        st.markdown("**Recommended Positioning**")
+                        st.write(comp_report["gap_analysis"]["recommended_positioning"])
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    try:
+        competitors = client.list_competitors(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        competitors = []
+
+    if not competitors:
+        st.caption("No competitor videos analyzed yet.")
+    else:
+        for vid in competitors:
+            with st.container(border=True):
+                views = (
+                    f"{vid['view_count']:,} views"
+                    if vid.get("view_count") is not None
+                    else "views n/a"
+                )
+                st.markdown(
+                    f"**[{vid['title']}]({vid['url']})** — {vid.get('channel_name') or 'Unknown'} "
+                    f"(`{views}` · `{vid['provider']}`)"
+                )
+                if vid.get("topics_covered_json"):
+                    st.caption("Topics: " + ", ".join(vid["topics_covered_json"]))
+
+with tab_fact_check:
+    st.subheader("Evidence-Based Fact Checking")
+    with st.form("run_fact_check_form"):
+        custom_claims_raw = st.text_area(
+            "Additional Claims to Verify (optional, one per line)",
+            height=80,
+        )
+        req_approval = st.checkbox(
+            "Create Research Approval Gate (Gate 2) after fact-check",
+            value=True,
+        )
+        if st.form_submit_button("Run Fact Checker", type="primary"):
+            custom_claims = [
+                line.strip() for line in custom_claims_raw.splitlines() if line.strip()
+            ] or None
+            with st.spinner("Extracting claims and verifying against project evidence..."):
+                try:
+                    fc_report = client.run_fact_check(
+                        project_id,
+                        custom_claims=custom_claims,
+                        request_research_approval=req_approval,
+                    )
+                    st.success(
+                        f"Fact-check complete: {fc_report['verified_count']} verified, "
+                        f"{fc_report['unsupported_count']} unsupported, "
+                        f"{fc_report['conflicting_count']} conflicting, "
+                        f"{fc_report['uncertain_count']} uncertain."
+                    )
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    verdict_filter = st.selectbox(
+        "Filter Claims by Verdict",
+        ["All", "VERIFIED", "UNSUPPORTED", "CONFLICTING", "UNCERTAIN"],
+    )
+    try:
+        claims = client.list_claims(
+            project_id,
+            verdict=None if verdict_filter == "All" else verdict_filter,
+        )
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        claims = []
+
+    if not claims:
+        st.caption("No claims audited yet. Run the fact checker after collecting research sources.")
+    else:
+        for claim in claims:
+            with st.container(border=True):
+                st.markdown(
+                    f"**[{claim['verdict']}]** (risk: `{claim['risk_level']}`, "
+                    f"confidence: `{claim['confidence']:.2f}`)"
+                )
+                st.write(claim["statement"])
+                st.caption(f"Rationale: {claim['rationale']}")
+                if claim.get("evidence_summary"):
+                    st.warning(claim["evidence_summary"])
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)

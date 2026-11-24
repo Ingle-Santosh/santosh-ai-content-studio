@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     RESEARCH_FETCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0.0)
     RESEARCH_MAX_RESULTS_PER_QUERY: int = Field(default=5, ge=1, le=20)
 
+    # Public YouTube Competitor Metadata (optional API key; falls back to public search + oEmbed)
+    YOUTUBE_API_KEY: str | None = None
+    YOUTUBE_MAX_COMPETITORS: int = Field(default=5, ge=1, le=20)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

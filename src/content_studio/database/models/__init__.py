@@ -2,14 +2,20 @@ from content_studio.database.models.agent_run import AgentRun
 from content_studio.database.models.approval import Approval
 from content_studio.database.models.artifact import Artifact
 from content_studio.database.models.channel_guideline import ChannelGuideline
+from content_studio.database.models.claim import Claim
+from content_studio.database.models.claim_source import ClaimSource
+from content_studio.database.models.competitor_video import CompetitorVideo
 from content_studio.database.models.enums import (
     AgentRunStatus,
     ApprovalGate,
     ApprovalStatus,
     ArtifactStatus,
     ArtifactType,
+    ClaimVerdict,
+    EvidenceStance,
     FindingCategory,
     ProjectStatus,
+    RiskLevel,
     RunStatus,
     SourceStatus,
 )
@@ -32,12 +38,18 @@ __all__ = [
     "ArtifactType",
     "Base",
     "ChannelGuideline",
+    "Claim",
+    "ClaimSource",
+    "ClaimVerdict",
+    "CompetitorVideo",
+    "EvidenceStance",
     "FindingCategory",
     "LLMUsageLog",
     "Project",
     "ProjectStatus",
     "ResearchDocument",
     "ResearchFinding",
+    "RiskLevel",
     "RunStatus",
     "Source",
     "SourceStatus",
