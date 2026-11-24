@@ -23,6 +23,7 @@ from content_studio.services.script_service import (
 )
 from content_studio.services.script_validator import REQUIRED_SECTIONS, validate_script_sections
 from content_studio.services.storyboard_service import ScriptNotApprovedError, StoryboardService
+from content_studio.services.topic_strategist_service import TopicStrategistService
 from content_studio.services.web_extractor import (
     ExtractedPage,
     WebExtractor,
@@ -53,6 +54,7 @@ __all__ = [
     "ScriptNotFoundError",
     "ScriptwriterService",
     "StoryboardService",
+    "TopicStrategistService",
     "WebExtractor",
     "WorkflowGateError",
     "compute_url_hash",

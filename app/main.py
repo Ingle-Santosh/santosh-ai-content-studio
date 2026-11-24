@@ -15,6 +15,7 @@ from app.api.routes import (
     research_router,
     scripts_router,
     storyboard_router,
+    workflows_router,
 )
 from content_studio.config.settings import settings
 from content_studio.database.session import engine
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     application.include_router(competitors_router)
     application.include_router(scripts_router)
     application.include_router(storyboard_router)
+    application.include_router(workflows_router)
     return application
 
 

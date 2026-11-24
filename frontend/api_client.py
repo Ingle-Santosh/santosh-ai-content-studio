@@ -324,3 +324,44 @@ class StudioAPIClient:
     def list_scenes(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/storyboard/scenes")
         return list(payload.get("items", []))
+
+    # LangGraph Workflows
+    def start_workflow(
+        self,
+        project_id: str,
+        *,
+        seed_urls: list[str] | None = None,
+        max_results_per_query: int = 5,
+        auto_approve: bool | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "seed_urls": seed_urls,
+            "max_results_per_query": max_results_per_query,
+            "auto_approve": auto_approve,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/workflows/start", json=body))
+
+    def list_project_workflows(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/workflows")
+        return list(payload.get("items", []))
+
+    def get_workflow_status(self, run_id: str) -> dict[str, Any]:
+        return dict(self._request("GET", f"/api/workflows/{run_id}"))
+
+    def resume_workflow(
+        self,
+        run_id: str,
+        *,
+        decision: str,
+        reviewer: str = "Creator",
+        comments: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "decision": decision,
+            "reviewer": reviewer,
+            "comments": comments,
+        }
+        return dict(self._request("POST", f"/api/workflows/{run_id}/resume", json=body))
+
+    def cancel_workflow(self, run_id: str) -> dict[str, Any]:
+        return dict(self._request("POST", f"/api/workflows/{run_id}/cancel"))

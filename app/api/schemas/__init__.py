@@ -64,6 +64,13 @@ from app.api.schemas.storyboard import (
     StoryboardGenerateRequest,
     StoryboardGenerateResponse,
 )
+from app.api.schemas.workflow import (
+    WorkflowResumeRequest,
+    WorkflowRunListResponse,
+    WorkflowRunSnapshotResponse,
+    WorkflowRunSummaryResponse,
+    WorkflowStartRequest,
+)
 
 __all__ = [
     "ApprovalCreateRequest",
@@ -112,4 +119,9 @@ __all__ = [
     "StoryboardGenerateRequest",
     "StoryboardGenerateResponse",
     "UsageLogResponse",
+    "WorkflowResumeRequest",
+    "WorkflowRunListResponse",
+    "WorkflowRunSnapshotResponse",
+    "WorkflowRunSummaryResponse",
+    "WorkflowStartRequest",
 ]

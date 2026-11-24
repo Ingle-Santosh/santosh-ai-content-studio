@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 6 Complete / Ready for Milestone 7  
+**Status:** Development – Milestone 7 Complete / Ready for Milestone 8  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -823,15 +823,14 @@ Tasks:
 
 Tasks:
 
-- Define graph state.
-- Implement workflow nodes.
-- Implement conditional edges.
-- Add parallel research execution.
-- Add persistent checkpointing.
-- Implement human approval interrupts.
-- Add retry and recovery logic.
-- Implement workflow history.
-- Add integration tests.
+- [x] Install `langgraph` and `langgraph-checkpoint-sqlite` and define lightweight `ContentWorkflowState` (metadata & artifact references only).
+- [x] Implement Topic Strategist service (`TopicStrategistService`, `prompts/topic_strategist/`) and workflow nodes (`topic_strategist`, `research_node`, `competitor_node`, `merge_research`, `fact_checker`, `scriptwriter`, `storyboard`).
+- [x] Implement conditional edges with human approval routing (`APPROVED`, `CHANGES_REQUESTED` revision loops, `REJECTED` cancellation).
+- [x] Add parallel fan-out execution of `research_node` and `competitor_node` converging at `merge_research`.
+- [x] Add persistent SQLite checkpointing via `AsyncSqliteSaver` (`data/checkpoints.db`) with stable per-run `thread_id`.
+- [x] Implement native LangGraph `interrupt()` and `Command(resume=...)` across Gates 1–3 with idempotent completed-step skipping.
+- [x] Implement `WorkflowOrchestrator`, Workflow API (`/api/projects/{project_id}/workflows/*`, `/api/workflows/{run_id}/*`), Workflow Workspace tab, and dedicated Approval Center (`frontend/pages/3_Approval_Center.py`).
+- [x] Add end-to-end LangGraph integration tests verifying process-restart resume, parallel fan-out, revision loops without repeating earlier stages, and API lifecycle.
 
 **Acceptance criteria:**
 
@@ -1147,7 +1146,7 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 6 is complete. The next milestone is **Milestone 7 – LangGraph Orchestration**.
+Milestone 7 is complete. The next milestone is **Milestone 8 – Visual Asset Generation**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
@@ -1155,7 +1154,8 @@ Milestone 6 is complete. The next milestone is **Milestone 7 – LangGraph Orche
 - [x] Milestone 4 – Research Engine (`0003_research_engine`, `DuckDuckGoSearchProvider`/`TavilySearchProvider`, `WebExtractor` with `trafilatura`, URL & checksum deduplication, grounded `ResearchReport` via `ModelRouter`, Research API & Workspace tab).
 - [x] Milestone 5 – Fact Checking & Competitor Analysis (`0004_fact_check_competitors`, evidence-grounded `FactCheckService`, YouTube public metadata & `CompetitorService`, Gate 2 research approval creation, Fact Checking & Competitors Workspace tabs).
 - [x] Milestone 6 – Scriptwriting & Storyboarding (`0005_scripts_and_storyboard`, guideline-driven `ScriptwriterService`, deterministic `validate_script_sections`, Gate 3 script approval, `StoryboardService` with scene-level asset requirements, Script & Storyboard Workspace tabs).
-- [ ] Begin Milestone 7 – LangGraph Orchestration (install `langgraph` + SQLite checkpointer, Topic Strategist node, parallel Research + Competitor fan-out, persistent `checkpoints.db`, human-in-the-loop interrupts & resume across Gates 1–3, workflow history API & Approval Center UI).
+- [x] Milestone 7 – LangGraph Orchestration (`langgraph` + `AsyncSqliteSaver` in `data/checkpoints.db`, `TopicStrategistService`, parallel Research + Competitor fan-out, native `interrupt()`/`Command(resume=...)` across Gates 1–3, `WorkflowOrchestrator`, Workflow API, and Approval Center UI).
+- [ ] Begin Milestone 8 – Visual Asset Generation (Asset Planner, Mermaid diagrams + SVG rendering, HTML/CSS/JS educational animations, image/screenshot handling, code demo generation + isolated execution validation, and deterministic Asset QA).
 
 ### Initial Commands
 

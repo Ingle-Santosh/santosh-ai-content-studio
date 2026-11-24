@@ -9,6 +9,7 @@ from app.api.routes.projects import router as projects_router
 from app.api.routes.research import router as research_router
 from app.api.routes.scripts import router as scripts_router
 from app.api.routes.storyboard import router as storyboard_router
+from app.api.routes.workflows import router as workflows_router
 
 __all__ = [
     "approvals_router",
@@ -22,4 +23,5 @@ __all__ = [
     "research_router",
     "scripts_router",
     "storyboard_router",
+    "workflows_router",
 ]

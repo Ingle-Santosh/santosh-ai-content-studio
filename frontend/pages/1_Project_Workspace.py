@@ -37,6 +37,7 @@ meta_cols[2].metric("Budget (USD)", f"${project.get('budget_usd', 0.0):.2f}")
 meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 
 (
+    tab_workflow,
     tab_research,
     tab_competitors,
     tab_fact_check,
@@ -47,6 +48,7 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
     tab_approvals,
 ) = st.tabs(
     [
+        "Workflow",
         "Research",
         "Competitors",
         "Fact Checking",
@@ -57,6 +59,84 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
         "Approvals",
     ]
 )
+
+with tab_workflow:
+    st.subheader("LangGraph End-to-End Pipeline")
+    with st.form("start_workflow_form"):
+        wf_seeds_raw = st.text_area(
+            "Seed Reference URLs (optional, one per line)",
+            height=70,
+        )
+        w1, w2 = st.columns(2)
+        wf_max_res = w1.slider("Search Results per Query", min_value=1, max_value=10, value=5)
+        wf_auto = w2.checkbox("Auto-Approve Gates (Skip Human Pauses)", value=False)
+        if st.form_submit_button("Start Full Workflow", type="primary"):
+            wf_seeds = [line.strip() for line in wf_seeds_raw.splitlines() if line.strip()] or None
+            with st.spinner("Running LangGraph pipeline until next human approval gate..."):
+                try:
+                    snap = client.start_workflow(
+                        project_id,
+                        seed_urls=wf_seeds,
+                        max_results_per_query=wf_max_res,
+                        auto_approve=wf_auto,
+                    )
+                    st.success(
+                        f"Workflow `{snap['run_id'][:8]}` is now `{snap['status']}` "
+                        f"at stage `{snap.get('current_stage')}`."
+                    )
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    st.markdown("### Workflow History")
+    try:
+        wf_runs = client.list_project_workflows(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        wf_runs = []
+
+    if not wf_runs:
+        st.caption("No LangGraph workflow runs started for this project yet.")
+    else:
+        for run in wf_runs:
+            with st.container(border=True):
+                st.markdown(
+                    f"**Run `{run['id'][:8]}`** (`{run['thread_id']}`) — "
+                    f"`{run['status']}` · Stage: `{run.get('current_stage') or '—'}`"
+                )
+                if run.get("error_message"):
+                    st.error(run["error_message"])
+                if run["status"] == "INTERRUPTED":
+                    wf_notes = st.text_input(
+                        "Gate Feedback / Revision Notes",
+                        key=f"wf_notes_{run['id']}",
+                    )
+                    b1, b2, b3 = st.columns(3)
+                    if b1.button("Approve & Resume", key=f"wf_app_{run['id']}", type="primary"):
+                        try:
+                            client.resume_workflow(
+                                run["id"],
+                                decision="APPROVED",
+                                comments=wf_notes.strip() or None,
+                            )
+                            st.rerun()
+                        except StudioAPIError as exc:
+                            st.error(str(exc))
+                    if b2.button("Request Changes", key=f"wf_chg_{run['id']}"):
+                        try:
+                            client.resume_workflow(
+                                run["id"],
+                                decision="CHANGES_REQUESTED",
+                                comments=wf_notes.strip() or None,
+                            )
+                            st.rerun()
+                        except StudioAPIError as exc:
+                            st.error(str(exc))
+                    if b3.button("Cancel Run", key=f"wf_can_{run['id']}"):
+                        try:
+                            client.cancel_workflow(run["id"])
+                            st.rerun()
+                        except StudioAPIError as exc:
+                            st.error(str(exc))
 
 with tab_research:
     st.subheader("Research Engine")

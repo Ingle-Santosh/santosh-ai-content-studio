@@ -1,3 +1,4 @@
+from content_studio.contracts.brief import ContentBriefLLMOutput, ContentBriefReport
 from content_studio.contracts.competitor import (
     CompetitorGapLLMOutput,
     CompetitorReport,
@@ -43,6 +44,8 @@ __all__ = [
     "CompetitorGapLLMOutput",
     "CompetitorReport",
     "CompetitorVideoSummary",
+    "ContentBriefLLMOutput",
+    "ContentBriefReport",
     "ExtractedClaimItem",
     "FactCheckLLMOutput",
     "FactCheckReport",
