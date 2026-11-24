@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,8 +24,26 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_DEFAULT_MODEL: str = "qwen2.5-coder:14b"
     OLLAMA_WRITING_MODEL: str | None = None
+    OLLAMA_FAST_MODEL: str | None = None
+
+    # Optional Cloud LLM fallback (disabled by default via LOCAL_ONLY=True)
+    CLOUD_LLM_PROVIDER: str = "gemini"
     GEMINI_API_KEY: str | None = None
-    MAX_BUDGET_USD: float = 0.0
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
+    GEMINI_DEFAULT_MODEL: str = "gemini-2.5-flash"
+
+    # LLM Execution & Budget Guardrails
+    MAX_BUDGET_USD: float = Field(default=0.0, ge=0.0)
+    LLM_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0.0)
+    LLM_MAX_RETRIES: int = Field(default=2, ge=0, le=5)
+    LLM_RETRY_BASE_DELAY_SECONDS: float = Field(default=0.5, ge=0.0)
+    LLM_STRUCTURED_MAX_REPAIRS: int = Field(default=2, ge=0, le=4)
+
+    # Web Research Providers (DuckDuckGo requires zero API keys by default)
+    SEARCH_PROVIDER: str = "duckduckgo"
+    SEARCH_API_KEY: str | None = None
+    RESEARCH_FETCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0.0)
+    RESEARCH_MAX_RESULTS_PER_QUERY: int = Field(default=5, ge=1, le=20)
 
     model_config = SettingsConfigDict(
         env_file=".env",

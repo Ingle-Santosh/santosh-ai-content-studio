@@ -42,6 +42,23 @@ class ApprovalStatus(StrEnum):
     CHANGES_REQUESTED = "CHANGES_REQUESTED"
 
 
+class SourceStatus(StrEnum):
+    DISCOVERED = "DISCOVERED"
+    EXTRACTED = "EXTRACTED"
+    DUPLICATE = "DUPLICATE"
+    FAILED = "FAILED"
+
+
+class FindingCategory(StrEnum):
+    CONCEPT = "concept"
+    FACT = "fact"
+    DEFINITION = "definition"
+    EXAMPLE = "example"
+    BEST_PRACTICE = "best_practice"
+    CONTRADICTION = "contradiction"
+    STATISTIC = "statistic"
+
+
 class ArtifactType(StrEnum):
     CONTENT_BRIEF = "content_brief"
     RESEARCH_BRIEF = "research_brief"

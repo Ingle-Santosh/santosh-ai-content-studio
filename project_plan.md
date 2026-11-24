@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 2 Complete / Ready for Milestone 3  
+**Status:** Development – Milestone 4 Complete / Ready for Milestone 5  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -470,9 +470,9 @@ Use SQLite initially via `aiosqlite` with async SQLAlchemy 2.x and Alembic migra
 | `approvals` | Human approval gate records, decisions, and reviewer comments | M2 (Implemented) |
 | `channel_guidelines` | Reusable, configurable channel preferences and brand rules | M2 (Implemented) |
 | `agent_runs` | Per-agent/node execution audit trail linked to `workflow_runs` | M2 (Implemented) |
-| `sources` | Research source metadata and deduplication keys | M4 |
-| `research_documents` | Extracted webpage content metadata / references | M4 |
-| `research_findings` | Structured research findings linked to sources | M4 |
+| `sources` | Research source metadata and deduplication keys | M4 (Implemented) |
+| `research_documents` | Extracted webpage content metadata / references | M4 (Implemented) |
+| `research_findings` | Structured research findings linked to sources | M4 (Implemented) |
 | `claims` | Factual claims requiring verification | M5 |
 | `claim_sources` | Claim-to-source evidence mapping | M5 |
 | `competitor_videos` | Public YouTube competitor metadata and content-gap notes | M5 |
@@ -746,15 +746,15 @@ Tasks:
 
 Tasks:
 
-- Define common LLM provider interface.
-- Implement Ollama provider.
-- Implement configurable cloud provider.
-- Add model router.
-- Add model selection by task.
-- Add timeout and retry handling.
-- Add structured-output validation.
-- Record token usage, latency and cost.
-- Test local-only mode.
+- [x] Define common LLM provider interface (`BaseLLMProvider`, typed `LLMRequest`/`LLMResponse`/`LLMUsage`).
+- [x] Implement Ollama provider (`OllamaProvider` via async `httpx` `/api/chat` and `/api/tags`).
+- [x] Implement configurable cloud provider (`GeminiProvider` via REST API with header-based auth).
+- [x] Add `ModelRouter` with task-based routing (`TaskType`), local-only enforcement, and global/per-project budget caps.
+- [x] Add timeout, bounded exponential-backoff retries, and graceful cloud-outage fallback to local Ollama.
+- [x] Add strict Pydantic structured-output extraction, validation, and bounded repair turns (`generate_structured`).
+- [x] Record token usage, latency, and estimated cost in `llm_usage_logs` and update `projects.spent_usd`.
+- [x] Expose `/api/llm/status` and `/api/projects/{project_id}/usage` endpoints + Settings UI provider health view.
+- [x] Test local-only mode, cloud fallback, budget caps, retries, structured repairs, and API routes.
 
 **Acceptance criteria:**
 
@@ -766,15 +766,14 @@ Tasks:
 
 Tasks:
 
-- Add research tables (`sources`, `research_documents`, `research_findings`) via Alembic migration.
-- Implement search provider interface.
-- Implement webpage extraction (`trafilatura`).
-- Store source metadata.
-- Extract research findings.
-- Build source deduplication.
-- Implement research report schemas.
-- Add source traceability.
-- Add research tab to the Streamlit Project Workspace.
+- [x] Add research tables (`sources`, `research_documents`, `research_findings`) via Alembic migration `0003_research_engine.py`.
+- [x] Implement search provider interface (`BaseSearchProvider`, zero-key `DuckDuckGoSearchProvider`, optional `TavilySearchProvider`).
+- [x] Implement async webpage extraction (`WebExtractor` using `trafilatura` with HTML fallback and error recording).
+- [x] Store source metadata and full extracted text outside DB in `01_research/sources/`.
+- [x] Build URL canonicalization (`url_hash`) and content-checksum (`content_checksum_sha256`) deduplication.
+- [x] Implement structured `ResearchReport` / `ResearchSynthesisOutput` Pydantic contracts and externalized prompt templates (`prompts/research/`).
+- [x] Enforce strict source traceability (strip fabricated URLs and drop ungrounded findings) and save versioned report artifacts (`research_report.json`, `research_report.md`).
+- [x] Add Research API (`/api/projects/{project_id}/research/...`) and Research tab in Streamlit Project Workspace.
 
 **Acceptance criteria:**
 
@@ -1153,11 +1152,13 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 2 is complete. The next milestone is **Milestone 3 – Hybrid LLM and Provider Layer**.
+Milestone 4 is complete. The next milestone is **Milestone 5 – Fact Checking and Competitor Analysis**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
-- [ ] Begin Milestone 3 – Hybrid LLM and Provider Layer (common LLM provider interface, Ollama adapter, optional gated cloud adapter, task-based model router, structured-output validation, token/cost/latency logging).
+- [x] Milestone 3 – Hybrid LLM & Provider Layer (`BaseLLMProvider`, `OllamaProvider`, `GeminiProvider`, `ModelRouter`, structured output repair, budget guardrails, `/api/llm/status` & `/api/projects/{project_id}/usage`).
+- [x] Milestone 4 – Research Engine (`0003_research_engine`, `DuckDuckGoSearchProvider`/`TavilySearchProvider`, `WebExtractor` with `trafilatura`, URL & checksum deduplication, grounded `ResearchReport` via `ModelRouter`, Research API & Workspace tab).
+- [ ] Begin Milestone 5 – Fact Checking & Competitor Analysis (`claims`, `claim_sources`, `competitor_videos` migration, claim extraction & evidence-based fact checker, public YouTube competitor metadata & content-gap report, research approval gate).
 
 ### Initial Commands
 

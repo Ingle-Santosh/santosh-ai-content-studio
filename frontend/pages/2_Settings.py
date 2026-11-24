@@ -80,8 +80,34 @@ with st.form("channel_guidelines_form"):
             st.error(str(exc))
 
 st.divider()
+st.subheader("Hybrid LLM Providers & Task Routing")
+if st.button("Check LLM Providers Status"):
+    try:
+        llm_status = client.get_llm_status()
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Local-Only Mode", str(llm_status["local_only"]))
+        m2.metric("Global Budget Cap", f"${llm_status['max_budget_usd']:.2f}")
+        m3.metric("Global Spend", f"${llm_status['current_global_spend_usd']:.4f}")
+
+        st.markdown("**Providers**")
+        for prov in llm_status.get("providers", []):
+            badge = "Available" if prov["available"] else f"Unavailable ({prov.get('error')})"
+            kind = "Cloud" if prov["is_cloud"] else "Local"
+            st.write(f"- **{prov['provider']}** ({kind}): `{badge}`")
+            if prov.get("models"):
+                st.caption("Installed models: " + ", ".join(prov["models"][:10]))
+
+        st.markdown("**Default Task Routing Table**")
+        st.json(llm_status.get("routing_table", {}))
+    except StudioAPIError as exc:
+        st.error(str(exc))
+
+st.divider()
 st.subheader("Runtime Configuration (Read-Only)")
 st.write(f"- **Local-Only Mode**: `{settings.LOCAL_ONLY}`")
 st.write(f"- **Global Budget Cap**: `${settings.MAX_BUDGET_USD:.2f}`")
 st.write(f"- **Ollama Endpoint**: `{settings.OLLAMA_BASE_URL}` (`{settings.OLLAMA_DEFAULT_MODEL}`)")
+st.write(
+    f"- **Cloud Provider**: `{settings.CLOUD_LLM_PROVIDER}` (`{settings.GEMINI_DEFAULT_MODEL}`)"
+)
 st.write(f"- **Artifact Root**: `{settings.resolved_projects_dir}`")

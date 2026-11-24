@@ -4,10 +4,20 @@ from content_studio.contracts.project import (
     NarrationLanguage,
     ProjectConfig,
 )
+from content_studio.contracts.research import (
+    ResearchFindingItem,
+    ResearchReport,
+    ResearchSynthesisOutput,
+    SourceSummary,
+)
 
 __all__ = [
     "AudienceLevel",
     "ChannelGuidelinesConfig",
     "NarrationLanguage",
     "ProjectConfig",
+    "ResearchFindingItem",
+    "ResearchReport",
+    "ResearchSynthesisOutput",
+    "SourceSummary",
 ]

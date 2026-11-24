@@ -36,7 +36,86 @@ meta_cols[1].metric("Stage", project.get("current_stage") or "—")
 meta_cols[2].metric("Budget (USD)", f"${project.get('budget_usd', 0.0):.2f}")
 meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 
-tab_artifacts, tab_add, tab_approvals = st.tabs(["Artifacts Browser", "Add Artifact", "Approvals"])
+tab_research, tab_artifacts, tab_add, tab_approvals = st.tabs(
+    ["Research", "Artifacts Browser", "Add Artifact", "Approvals"]
+)
+
+with tab_research:
+    st.subheader("Research Engine")
+    with st.form("run_research_form"):
+        queries_raw = st.text_area(
+            "Custom Search Queries (optional, one per line; defaults to topic-derived queries)",
+            height=80,
+        )
+        seeds_raw = st.text_area(
+            "Reference URLs (optional, one per line)",
+            height=80,
+            placeholder="https://docs.python.org/...",
+        )
+        r_col1, r_col2 = st.columns(2)
+        max_results = r_col1.slider("Max Results per Query", min_value=1, max_value=10, value=5)
+        synthesize = r_col2.checkbox("Synthesize Structured Findings with LLM", value=True)
+        run_clicked = st.form_submit_button("Run Research", type="primary")
+        if run_clicked:
+            queries = [line.strip() for line in queries_raw.splitlines() if line.strip()] or None
+            seed_urls = [line.strip() for line in seeds_raw.splitlines() if line.strip()] or None
+            with st.spinner("Searching, extracting pages, and synthesizing research report..."):
+                try:
+                    report = client.run_research(
+                        project_id,
+                        queries=queries,
+                        seed_urls=seed_urls,
+                        max_results_per_query=max_results,
+                        synthesize_with_llm=synthesize,
+                    )
+                    st.success(
+                        f"Research complete: {report['sources_extracted']} extracted, "
+                        f"{report['sources_failed']} failed, "
+                        f"{report['duplicates_skipped']} duplicates skipped."
+                    )
+                except StudioAPIError as exc:
+                    st.error(str(exc))
+
+    st.markdown("### Grounded Research Findings")
+    try:
+        findings = client.list_research_findings(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        findings = []
+
+    if not findings:
+        st.caption("No research findings yet. Run research above to generate grounded findings.")
+    else:
+        for finding in findings:
+            badge = " ⚠️ Contradiction" if finding.get("is_contradiction") else ""
+            with st.container(border=True):
+                st.markdown(
+                    f"**{finding['title']}** — `{finding['category']}` "
+                    f"(confidence `{finding['confidence']:.2f}`){badge}"
+                )
+                st.write(finding["summary"])
+                urls = finding.get("source_urls_json", [])
+                if urls:
+                    st.caption("Sources: " + " | ".join(urls))
+
+    st.markdown("### Discovered Sources")
+    try:
+        sources = client.list_research_sources(project_id)
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        sources = []
+
+    if not sources:
+        st.caption("No sources collected yet.")
+    else:
+        for src in sources:
+            with st.container(border=True):
+                st.markdown(
+                    f"**[{src['title'] or src['url']}]({src['url']})** "
+                    f"(`{src['domain']}` · `{src['provider']}` · `{src['status']}`)"
+                )
+                if src.get("error_message"):
+                    st.caption(f"Extraction note: {src['error_message']}")
 
 with tab_artifacts:
     filter_col1, filter_col2 = st.columns(2)
