@@ -62,4 +62,5 @@ uv run ruff format --check .
 ## Current Status
 
 - **Milestone 1 (Foundation)**: Complete — FastAPI backend, Streamlit dashboard, async SQLite + Alembic initial migration (`projects`, `workflow_runs`, `artifacts`, `llm_usage_logs`), filesystem `ArtifactStore`, and test suite.
-- **Next**: **Milestone 2** — Shared persistence (`approvals`, `channel_guidelines`, `agent_runs`), `ArtifactService` & Artifacts API, and Project Workspace artifact browsing.
+- **Milestone 2 (Shared Persistence & Artifact Management)**: Complete — Alembic `0002_shared_persistence` (`approvals`, `channel_guidelines`, `agent_runs`), `ArtifactService` (versioning, non-destructive draft superseding, SHA-256 verification), `/api/projects/{project_id}/artifacts`, `/api/guidelines`, `/api/approvals`, and Streamlit Project Workspace + Settings pages.
+- **Next**: **Milestone 3** — Hybrid LLM & Provider Layer (common LLM interface, Ollama primary provider, gated cloud fallback, model router, structured output validation, and `llm_usage_logs` recording).

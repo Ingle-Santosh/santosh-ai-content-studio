@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from content_studio.database.models.artifact import Artifact
@@ -97,3 +97,32 @@ class ArtifactRepository:
         await self._session.commit()
         await self._session.refresh(artifact)
         return artifact
+
+    async def supersede_drafts(
+        self,
+        project_id: str,
+        stage: str,
+        artifact_type: ArtifactType | str,
+        *,
+        exclude_artifact_id: str | None = None,
+    ) -> int:
+        """Mark prior DRAFT versions of the same artifact slot as SUPERSEDED.
+
+        Approved artifacts are never modified destructively.
+        """
+        type_val = artifact_type.value if isinstance(artifact_type, ArtifactType) else artifact_type
+        stmt = (
+            update(Artifact)
+            .where(
+                Artifact.project_id == project_id,
+                Artifact.stage == stage,
+                Artifact.artifact_type == type_val,
+                Artifact.status == ArtifactStatus.DRAFT.value,
+            )
+            .values(status=ArtifactStatus.SUPERSEDED.value)
+        )
+        if exclude_artifact_id is not None:
+            stmt = stmt.where(Artifact.id != exclude_artifact_id)
+        result = await self._session.execute(stmt)
+        await self._session.commit()
+        return int(result.rowcount or 0)

@@ -1,0 +1,54 @@
+import sqlite3
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
+
+from content_studio.config.settings import settings
+
+
+def _list_tables(db_path: Path) -> set[str]:
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        ).fetchall()
+        return {row[0] for row in rows}
+    finally:
+        conn.close()
+
+
+def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) -> None:
+    db_path = tmp_path / "migration_test.db"
+    db_url = f"sqlite+aiosqlite:///{db_path.as_posix()}"
+
+    # alembic/env.py pulls settings.resolved_database_url at runtime
+    monkeypatch.setattr(settings, "DATABASE_URL", db_url)
+    monkeypatch.setattr(settings, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(settings, "PROJECTS_DIR", tmp_path / "projects")
+
+    alembic_cfg = Config(str(settings.BASE_DIR / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(settings.BASE_DIR / "alembic"))
+
+    command.upgrade(alembic_cfg, "head")
+    tables_at_head = _list_tables(db_path)
+    assert {
+        "alembic_version",
+        "projects",
+        "workflow_runs",
+        "artifacts",
+        "llm_usage_logs",
+        "approvals",
+        "channel_guidelines",
+        "agent_runs",
+    }.issubset(tables_at_head)
+
+    command.downgrade(alembic_cfg, "0001_initial_schema")
+    tables_at_0001 = _list_tables(db_path)
+    assert {"projects", "workflow_runs", "artifacts", "llm_usage_logs"}.issubset(tables_at_0001)
+    assert "approvals" not in tables_at_0001
+    assert "channel_guidelines" not in tables_at_0001
+    assert "agent_runs" not in tables_at_0001
+
+    command.upgrade(alembic_cfg, "head")
+    assert {"approvals", "channel_guidelines", "agent_runs"}.issubset(_list_tables(db_path))

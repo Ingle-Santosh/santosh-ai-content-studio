@@ -75,3 +75,102 @@ class StudioAPIClient:
 
     def delete_project(self, project_id: str) -> None:
         self._request("DELETE", f"/api/projects/{project_id}")
+
+    # Artifacts
+    def list_artifacts(
+        self,
+        project_id: str,
+        *,
+        stage: str | None = None,
+        artifact_type: str | None = None,
+    ) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {}
+        if stage:
+            params["stage"] = stage
+        if artifact_type:
+            params["artifact_type"] = artifact_type
+        payload = self._request(
+            "GET", f"/api/projects/{project_id}/artifacts", params=params or None
+        )
+        return list(payload.get("items", []))
+
+    def create_artifact(
+        self,
+        project_id: str,
+        *,
+        stage: str,
+        artifact_type: str,
+        name: str,
+        content: str,
+        metadata_json: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "stage": stage,
+            "artifact_type": artifact_type,
+            "name": name,
+            "content": content,
+            "metadata_json": metadata_json or {},
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/artifacts", json=body))
+
+    def get_artifact_content(self, project_id: str, artifact_id: str) -> dict[str, Any]:
+        return dict(
+            self._request("GET", f"/api/projects/{project_id}/artifacts/{artifact_id}/content")
+        )
+
+    def verify_artifact(self, project_id: str, artifact_id: str) -> dict[str, Any]:
+        return dict(
+            self._request("GET", f"/api/projects/{project_id}/artifacts/{artifact_id}/verify")
+        )
+
+    # Channel Guidelines
+    def get_active_guideline(self) -> dict[str, Any]:
+        return dict(self._request("GET", "/api/guidelines/active"))
+
+    def upsert_guideline(
+        self,
+        slug: str,
+        *,
+        channel_name: str,
+        guidelines: dict[str, Any],
+        is_active: bool = True,
+    ) -> dict[str, Any]:
+        body = {
+            "channel_name": channel_name,
+            "is_active": is_active,
+            "guidelines": guidelines,
+        }
+        return dict(self._request("PUT", f"/api/guidelines/{slug}", json=body))
+
+    # Approvals
+    def list_approvals(
+        self,
+        *,
+        project_id: str | None = None,
+        status: str | None = None,
+        gate: str | None = None,
+    ) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {}
+        if project_id:
+            params["project_id"] = project_id
+        if status:
+            params["status"] = status
+        if gate:
+            params["gate"] = gate
+        payload = self._request("GET", "/api/approvals", params=params or None)
+        return list(payload.get("items", []))
+
+    def decide_approval(
+        self,
+        approval_id: str,
+        *,
+        status: str,
+        reviewer: str | None = None,
+        comments: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "status": status,
+            "reviewer": reviewer,
+            "comments": comments,
+        }
+        return dict(self._request("PATCH", f"/api/approvals/{approval_id}", json=body))
