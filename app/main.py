@@ -8,6 +8,7 @@ from app.api.routes import (
     artifacts_router,
     guidelines_router,
     health_router,
+    llm_router,
     projects_router,
 )
 from content_studio.config.settings import settings
@@ -32,6 +33,7 @@ def create_app() -> FastAPI:
     application.include_router(artifacts_router)
     application.include_router(guidelines_router)
     application.include_router(approvals_router)
+    application.include_router(llm_router)
     return application
 
 

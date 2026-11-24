@@ -14,6 +14,7 @@ from content_studio.database.repositories import (
     UsageRepository,
 )
 from content_studio.database.session import get_db_session
+from content_studio.providers.llm import ModelRouter
 from content_studio.services import (
     ApprovalService,
     ArtifactService,
@@ -101,4 +102,16 @@ def get_approval_service(
         project_repo=project_repo,
         approval_repo=approval_repo,
         artifact_repo=artifact_repo,
+    )
+
+
+def get_model_router(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    usage_repo: Annotated[UsageRepository, Depends(get_usage_repository)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+) -> ModelRouter:
+    return ModelRouter(
+        app_settings=app_settings,
+        usage_repo=usage_repo,
+        project_repo=project_repo,
     )

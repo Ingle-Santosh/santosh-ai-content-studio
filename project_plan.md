@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 2 Complete / Ready for Milestone 3  
+**Status:** Development – Milestone 3 Complete / Ready for Milestone 4  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -746,15 +746,15 @@ Tasks:
 
 Tasks:
 
-- Define common LLM provider interface.
-- Implement Ollama provider.
-- Implement configurable cloud provider.
-- Add model router.
-- Add model selection by task.
-- Add timeout and retry handling.
-- Add structured-output validation.
-- Record token usage, latency and cost.
-- Test local-only mode.
+- [x] Define common LLM provider interface (`BaseLLMProvider`, typed `LLMRequest`/`LLMResponse`/`LLMUsage`).
+- [x] Implement Ollama provider (`OllamaProvider` via async `httpx` `/api/chat` and `/api/tags`).
+- [x] Implement configurable cloud provider (`GeminiProvider` via REST API with header-based auth).
+- [x] Add `ModelRouter` with task-based routing (`TaskType`), local-only enforcement, and global/per-project budget caps.
+- [x] Add timeout, bounded exponential-backoff retries, and graceful cloud-outage fallback to local Ollama.
+- [x] Add strict Pydantic structured-output extraction, validation, and bounded repair turns (`generate_structured`).
+- [x] Record token usage, latency, and estimated cost in `llm_usage_logs` and update `projects.spent_usd`.
+- [x] Expose `/api/llm/status` and `/api/projects/{project_id}/usage` endpoints + Settings UI provider health view.
+- [x] Test local-only mode, cloud fallback, budget caps, retries, structured repairs, and API routes.
 
 **Acceptance criteria:**
 
@@ -1153,11 +1153,12 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 2 is complete. The next milestone is **Milestone 3 – Hybrid LLM and Provider Layer**.
+Milestone 3 is complete. The next milestone is **Milestone 4 – Research Engine**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
-- [ ] Begin Milestone 3 – Hybrid LLM and Provider Layer (common LLM provider interface, Ollama adapter, optional gated cloud adapter, task-based model router, structured-output validation, token/cost/latency logging).
+- [x] Milestone 3 – Hybrid LLM & Provider Layer (`BaseLLMProvider`, `OllamaProvider`, `GeminiProvider`, `ModelRouter`, structured output repair, budget guardrails, `/api/llm/status` & `/api/projects/{project_id}/usage`).
+- [ ] Begin Milestone 4 – Research Engine (research tables migration, search provider interface, webpage extraction via `trafilatura`, deduplication, structured `ResearchReport`, source traceability, and Research tab in Streamlit).
 
 ### Initial Commands
 

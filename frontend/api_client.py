@@ -174,3 +174,10 @@ class StudioAPIClient:
             "comments": comments,
         }
         return dict(self._request("PATCH", f"/api/approvals/{approval_id}", json=body))
+
+    # LLM Status & Usage
+    def get_llm_status(self) -> dict[str, Any]:
+        return dict(self._request("GET", "/api/llm/status"))
+
+    def get_project_usage(self, project_id: str) -> dict[str, Any]:
+        return dict(self._request("GET", f"/api/projects/{project_id}/usage"))
