@@ -78,6 +78,37 @@ class RiskLevel(StrEnum):
     HIGH = "high"
 
 
+class ScriptStatus(StrEnum):
+    DRAFT = "DRAFT"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    NEEDS_REVISION = "NEEDS_REVISION"
+
+
+class ScriptSectionType(StrEnum):
+    HOOK = "hook"
+    INTRODUCTION = "introduction"
+    PROBLEM_STATEMENT = "problem_statement"
+    LEARNING_OBJECTIVES = "learning_objectives"
+    MAIN_EXPLANATION = "main_explanation"
+    PRACTICAL_DEMONSTRATION = "practical_demonstration"
+    EXAMPLES = "examples"
+    SUMMARY = "summary"
+    CALL_TO_ACTION = "call_to_action"
+
+
+class SceneVisualType(StrEnum):
+    FACE_CAM = "face_cam"
+    SCREEN_RECORDING = "screen_recording"
+    DIAGRAM = "diagram"
+    ANIMATION = "animation"
+    IMAGE = "image"
+    SCREENSHOT = "screenshot"
+    CODE_DEMO = "code_demo"
+    SLIDE = "slide"
+    SPLIT_SCREEN = "split_screen"
+
+
 class ArtifactType(StrEnum):
     CONTENT_BRIEF = "content_brief"
     RESEARCH_BRIEF = "research_brief"

@@ -46,14 +46,17 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
         "claims",
         "claim_sources",
         "competitor_videos",
+        "scripts",
+        "script_versions",
+        "scenes",
     }.issubset(tables_at_head)
 
-    command.downgrade(alembic_cfg, "0003_research_engine")
-    tables_at_0003 = _list_tables(db_path)
-    assert {"sources", "research_documents", "research_findings"}.issubset(tables_at_0003)
-    assert "claims" not in tables_at_0003
-    assert "claim_sources" not in tables_at_0003
-    assert "competitor_videos" not in tables_at_0003
+    command.downgrade(alembic_cfg, "0004_fact_check_competitors")
+    tables_at_0004 = _list_tables(db_path)
+    assert {"claims", "claim_sources", "competitor_videos"}.issubset(tables_at_0004)
+    assert "scripts" not in tables_at_0004
+    assert "script_versions" not in tables_at_0004
+    assert "scenes" not in tables_at_0004
 
     command.downgrade(alembic_cfg, "0001_initial_schema")
     tables_at_0001 = _list_tables(db_path)
@@ -61,4 +64,4 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
     assert "approvals" not in tables_at_0001
 
     command.upgrade(alembic_cfg, "head")
-    assert {"claims", "claim_sources", "competitor_videos"}.issubset(_list_tables(db_path))
+    assert {"scripts", "script_versions", "scenes"}.issubset(_list_tables(db_path))

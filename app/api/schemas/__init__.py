@@ -50,6 +50,20 @@ from app.api.schemas.research import (
     SourceListResponse,
     SourceResponse,
 )
+from app.api.schemas.script import (
+    ScriptApproveRequest,
+    ScriptGenerateRequest,
+    ScriptGenerateResponse,
+    ScriptManualRevisionRequest,
+    ScriptResponse,
+    ScriptVersionResponse,
+)
+from app.api.schemas.storyboard import (
+    SceneListResponse,
+    SceneResponse,
+    StoryboardGenerateRequest,
+    StoryboardGenerateResponse,
+)
 
 __all__ = [
     "ApprovalCreateRequest",
@@ -85,7 +99,17 @@ __all__ = [
     "ResearchFindingResponse",
     "ResearchRunRequest",
     "ResearchRunResponse",
+    "SceneListResponse",
+    "SceneResponse",
+    "ScriptApproveRequest",
+    "ScriptGenerateRequest",
+    "ScriptGenerateResponse",
+    "ScriptManualRevisionRequest",
+    "ScriptResponse",
+    "ScriptVersionResponse",
     "SourceListResponse",
     "SourceResponse",
+    "StoryboardGenerateRequest",
+    "StoryboardGenerateResponse",
     "UsageLogResponse",
 ]

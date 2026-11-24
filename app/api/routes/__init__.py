@@ -7,6 +7,8 @@ from app.api.routes.health import router as health_router
 from app.api.routes.llm import router as llm_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.research import router as research_router
+from app.api.routes.scripts import router as scripts_router
+from app.api.routes.storyboard import router as storyboard_router
 
 __all__ = [
     "approvals_router",
@@ -18,4 +20,6 @@ __all__ = [
     "llm_router",
     "projects_router",
     "research_router",
+    "scripts_router",
+    "storyboard_router",
 ]

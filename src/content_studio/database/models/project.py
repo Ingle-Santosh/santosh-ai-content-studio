@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from content_studio.database.models.llm_usage_log import LLMUsageLog
     from content_studio.database.models.research_document import ResearchDocument
     from content_studio.database.models.research_finding import ResearchFinding
+    from content_studio.database.models.scene import Scene
+    from content_studio.database.models.script import Script
     from content_studio.database.models.source import Source
     from content_studio.database.models.workflow_run import WorkflowRun
 
@@ -74,5 +76,11 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     competitor_videos: Mapped[list["CompetitorVideo"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    scripts: Mapped[list["Script"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
+    scenes: Mapped[list["Scene"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

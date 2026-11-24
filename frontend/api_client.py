@@ -262,3 +262,65 @@ class StudioAPIClient:
     def list_competitors(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/competitors")
         return list(payload.get("items", []))
+
+    # Scriptwriting & Storyboarding
+    def generate_script(
+        self,
+        project_id: str,
+        *,
+        revision_notes: str | None = None,
+        require_approved_research: bool = False,
+        request_script_approval: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "revision_notes": revision_notes,
+            "require_approved_research": require_approved_research,
+            "request_script_approval": request_script_approval,
+        }
+        return dict(
+            self._request("POST", f"/api/projects/{project_id}/scripts/generate", json=body)
+        )
+
+    def get_script(self, project_id: str) -> dict[str, Any] | None:
+        try:
+            return dict(self._request("GET", f"/api/projects/{project_id}/scripts"))
+        except StudioAPIError as exc:
+            if "HTTP 404" in str(exc):
+                return None
+            raise
+
+    def approve_script_version(
+        self,
+        project_id: str,
+        version_number: int,
+        *,
+        reviewer: str = "Creator",
+        comments: str | None = None,
+    ) -> dict[str, Any]:
+        body = {"reviewer": reviewer, "comments": comments}
+        return dict(
+            self._request(
+                "POST",
+                f"/api/projects/{project_id}/scripts/versions/{version_number}/approve",
+                json=body,
+            )
+        )
+
+    def generate_storyboard(
+        self,
+        project_id: str,
+        *,
+        script_version_number: int | None = None,
+        require_approved_script: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "script_version_number": script_version_number,
+            "require_approved_script": require_approved_script,
+        }
+        return dict(
+            self._request("POST", f"/api/projects/{project_id}/storyboard/generate", json=body)
+        )
+
+    def list_scenes(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/storyboard/scenes")
+        return list(payload.get("items", []))

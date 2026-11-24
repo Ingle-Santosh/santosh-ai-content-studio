@@ -23,6 +23,18 @@ from content_studio.contracts.research import (
     ResearchSynthesisOutput,
     SourceSummary,
 )
+from content_studio.contracts.script import (
+    GeneratedScriptReport,
+    ScriptLLMOutput,
+    ScriptSectionItem,
+    ScriptValidationReport,
+)
+from content_studio.contracts.storyboard import (
+    GeneratedStoryboardReport,
+    SceneAssetRequirement,
+    StoryboardLLMOutput,
+    StoryboardSceneItem,
+)
 
 __all__ = [
     "AudienceLevel",
@@ -34,12 +46,20 @@ __all__ = [
     "ExtractedClaimItem",
     "FactCheckLLMOutput",
     "FactCheckReport",
+    "GeneratedScriptReport",
+    "GeneratedStoryboardReport",
     "NarrationLanguage",
     "ProjectConfig",
     "ResearchFindingItem",
     "ResearchReport",
     "ResearchSynthesisOutput",
+    "SceneAssetRequirement",
+    "ScriptLLMOutput",
+    "ScriptSectionItem",
+    "ScriptValidationReport",
     "SourceSummary",
+    "StoryboardLLMOutput",
+    "StoryboardSceneItem",
     "VerifiedClaimSummary",
     "VideoTopicMapping",
 ]
