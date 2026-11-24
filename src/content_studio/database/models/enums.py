@@ -59,6 +59,25 @@ class FindingCategory(StrEnum):
     STATISTIC = "statistic"
 
 
+class ClaimVerdict(StrEnum):
+    VERIFIED = "VERIFIED"
+    UNSUPPORTED = "UNSUPPORTED"
+    CONFLICTING = "CONFLICTING"
+    UNCERTAIN = "UNCERTAIN"
+
+
+class EvidenceStance(StrEnum):
+    SUPPORTS = "SUPPORTS"
+    CONTRADICTS = "CONTRADICTS"
+    MENTIONS = "MENTIONS"
+
+
+class RiskLevel(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
 class ArtifactType(StrEnum):
     CONTENT_BRIEF = "content_brief"
     RESEARCH_BRIEF = "research_brief"

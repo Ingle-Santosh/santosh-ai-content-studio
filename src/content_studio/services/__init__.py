@@ -7,6 +7,8 @@ from content_studio.services.artifact_service import (
     ProjectNotFoundError,
     ResourceNotFoundError,
 )
+from content_studio.services.competitor_service import CompetitorService
+from content_studio.services.fact_check_service import FactCheckService
 from content_studio.services.guideline_service import (
     DEFAULT_CHANNEL_NAME,
     DEFAULT_GUIDELINE_SLUG,
@@ -29,9 +31,11 @@ __all__ = [
     "ArtifactNotFoundError",
     "ArtifactService",
     "ChannelGuidelineService",
+    "CompetitorService",
     "DEFAULT_CHANNEL_NAME",
     "DEFAULT_GUIDELINE_SLUG",
     "ExtractedPage",
+    "FactCheckService",
     "ProjectNotFoundError",
     "ResearchService",
     "ResourceNotFoundError",

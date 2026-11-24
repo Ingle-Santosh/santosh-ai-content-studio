@@ -215,3 +215,50 @@ class StudioAPIClient:
     def list_research_findings(self, project_id: str) -> list[dict[str, Any]]:
         payload = self._request("GET", f"/api/projects/{project_id}/research/findings")
         return list(payload.get("items", []))
+
+    # Fact Checking & Competitor Analysis
+    def run_fact_check(
+        self,
+        project_id: str,
+        *,
+        custom_claims: list[str] | None = None,
+        request_research_approval: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "custom_claims": custom_claims,
+            "request_research_approval": request_research_approval,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/fact-check/run", json=body))
+
+    def list_claims(
+        self,
+        project_id: str,
+        *,
+        verdict: str | None = None,
+    ) -> list[dict[str, Any]]:
+        params = {"verdict": verdict} if verdict else None
+        payload = self._request(
+            "GET", f"/api/projects/{project_id}/fact-check/claims", params=params
+        )
+        return list(payload.get("items", []))
+
+    def run_competitor_analysis(
+        self,
+        project_id: str,
+        *,
+        queries: list[str] | None = None,
+        video_urls: list[str] | None = None,
+        max_results: int = 5,
+        analyze_with_llm: bool = True,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "queries": queries,
+            "video_urls": video_urls,
+            "max_results": max_results,
+            "analyze_with_llm": analyze_with_llm,
+        }
+        return dict(self._request("POST", f"/api/projects/{project_id}/competitors/run", json=body))
+
+    def list_competitors(self, project_id: str) -> list[dict[str, Any]]:
+        payload = self._request("GET", f"/api/projects/{project_id}/competitors")
+        return list(payload.get("items", []))

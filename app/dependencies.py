@@ -9,6 +9,8 @@ from content_studio.database.repositories import (
     ApprovalRepository,
     ArtifactRepository,
     ChannelGuidelineRepository,
+    CompetitorRepository,
+    FactCheckRepository,
     ProjectRepository,
     ResearchRepository,
     RunRepository,
@@ -17,10 +19,13 @@ from content_studio.database.repositories import (
 from content_studio.database.session import get_db_session
 from content_studio.providers.llm import ModelRouter
 from content_studio.providers.search import BaseSearchProvider, build_search_provider
+from content_studio.providers.youtube import BaseYouTubeProvider, build_youtube_provider
 from content_studio.services import (
     ApprovalService,
     ArtifactService,
     ChannelGuidelineService,
+    CompetitorService,
+    FactCheckService,
     ResearchService,
     WebExtractor,
 )
@@ -85,6 +90,18 @@ def get_research_repository(
     return ResearchRepository(session)
 
 
+def get_fact_check_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> FactCheckRepository:
+    return FactCheckRepository(session)
+
+
+def get_competitor_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> CompetitorRepository:
+    return CompetitorRepository(session)
+
+
 def get_artifact_service(
     project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
     artifact_repo: Annotated[ArtifactRepository, Depends(get_artifact_repository)],
@@ -139,6 +156,13 @@ def get_web_extractor(
     return WebExtractor(timeout_seconds=app_settings.RESEARCH_FETCH_TIMEOUT_SECONDS)
 
 
+def get_youtube_provider(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    search_provider: Annotated[BaseSearchProvider, Depends(get_search_provider)],
+) -> BaseYouTubeProvider:
+    return build_youtube_provider(app_settings, search_provider=search_provider)
+
+
 def get_research_service(
     app_settings: Annotated[Settings, Depends(get_settings)],
     project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
@@ -156,6 +180,48 @@ def get_research_service(
         artifact_service=artifact_service,
         search_provider=search_provider,
         extractor=extractor,
+        model_router=model_router,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_fact_check_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    research_repo: Annotated[ResearchRepository, Depends(get_research_repository)],
+    fact_check_repo: Annotated[FactCheckRepository, Depends(get_fact_check_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    approval_service: Annotated[ApprovalService, Depends(get_approval_service)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> FactCheckService:
+    return FactCheckService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        research_repo=research_repo,
+        fact_check_repo=fact_check_repo,
+        artifact_service=artifact_service,
+        model_router=model_router,
+        approval_service=approval_service,
+        agent_run_repo=agent_run_repo,
+    )
+
+
+def get_competitor_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    competitor_repo: Annotated[CompetitorRepository, Depends(get_competitor_repository)],
+    artifact_service: Annotated[ArtifactService, Depends(get_artifact_service)],
+    youtube_provider: Annotated[BaseYouTubeProvider, Depends(get_youtube_provider)],
+    model_router: Annotated[ModelRouter, Depends(get_model_router)],
+    agent_run_repo: Annotated[AgentRunRepository, Depends(get_agent_run_repository)],
+) -> CompetitorService:
+    return CompetitorService(
+        app_settings=app_settings,
+        project_repo=project_repo,
+        competitor_repo=competitor_repo,
+        artifact_service=artifact_service,
+        youtube_provider=youtube_provider,
         model_router=model_router,
         agent_run_repo=agent_run_repo,
     )

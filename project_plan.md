@@ -4,7 +4,7 @@
 **Document:** `project_plan.md`  
 **Project:** Santosh Analytics AI Content Studio  
 **Version:** 1.1  
-**Status:** Development – Milestone 4 Complete / Ready for Milestone 5  
+**Status:** Development – Milestone 5 Complete / Ready for Milestone 6  
 **Architecture:** Local-first, modular monolith, hybrid AI  
 **Primary interface:** Dashboard  
 **Automation model:** Human-in-the-loop  
@@ -473,9 +473,9 @@ Use SQLite initially via `aiosqlite` with async SQLAlchemy 2.x and Alembic migra
 | `sources` | Research source metadata and deduplication keys | M4 (Implemented) |
 | `research_documents` | Extracted webpage content metadata / references | M4 (Implemented) |
 | `research_findings` | Structured research findings linked to sources | M4 (Implemented) |
-| `claims` | Factual claims requiring verification | M5 |
-| `claim_sources` | Claim-to-source evidence mapping | M5 |
-| `competitor_videos` | Public YouTube competitor metadata and content-gap notes | M5 |
+| `claims` | Factual claims requiring verification | M5 (Implemented) |
+| `claim_sources` | Claim-to-source evidence mapping | M5 (Implemented) |
+| `competitor_videos` | Public YouTube competitor metadata and content-gap notes | M5 (Implemented) |
 | `scripts` | Script logical records per project | M6 |
 | `script_versions` | Script revision history and approval linkage | M6 |
 | `scenes` | Storyboard scenes and scene-level visual/asset requirements | M6 |
@@ -786,15 +786,12 @@ Tasks:
 
 Tasks:
 
-- Add fact-check and competitor tables (`claims`, `claim_sources`, `competitor_videos`) via Alembic migration.
-- Implement claim extraction.
-- Implement claim-to-source mapping.
-- Build evidence-based fact checker.
-- Classify verified, unsupported, conflicting and uncertain claims.
-- Implement public YouTube metadata collection.
-- Analyze competing video topics.
-- Generate content-gap reports.
-- Persist research approval gate records and expose review UI in Approval Center (full graph interrupt/resume wired in Milestone 7).
+- [x] Add fact-check and competitor tables (`claims`, `claim_sources`, `competitor_videos`) via Alembic migration `0004_fact_check_competitors.py`.
+- [x] Implement claim extraction and claim-to-source evidence mapping (`FactCheckRepository`, `FactCheckService`, `prompts/fact_checker/`).
+- [x] Build evidence-based fact checker classifying `VERIFIED`, `UNSUPPORTED`, `CONFLICTING`, and `UNCERTAIN` claims with hard guardrail downgrading ungrounded `VERIFIED` claims to `UNSUPPORTED`.
+- [x] Implement public YouTube metadata collection (`BaseYouTubeProvider`, optional `YouTubeDataAPIProvider`, zero-key `PublicYouTubeSearchProvider` + oEmbed without metric fabrication).
+- [x] Analyze competing video topics and generate content-gap reports (`CompetitorRepository`, `CompetitorService`, `prompts/competitor_analyst/`).
+- [x] Persist Gate 2 (`research`) approval requests linked to fact-check reports and expose Fact Checking + Competitors tabs in Streamlit Project Workspace (full graph interrupt/resume wired in Milestone 7).
 
 **Acceptance criteria:**
 
@@ -1152,13 +1149,14 @@ Do not replace existing working functionality without justification.
 
 # 20. Immediate Next Steps
 
-Milestone 4 is complete. The next milestone is **Milestone 5 – Fact Checking and Competitor Analysis**.
+Milestone 5 is complete. The next milestone is **Milestone 6 – Scriptwriting and Storyboarding**.
 
 - [x] Milestone 1 – Foundation (`0001_initial_schema`, FastAPI, Streamlit, `ArtifactStore`).
 - [x] Milestone 2 – Shared Persistence & Artifact Management (`0002_shared_persistence`, `ArtifactService`, Artifacts/Guidelines/Approvals APIs, Project Workspace & Settings pages).
 - [x] Milestone 3 – Hybrid LLM & Provider Layer (`BaseLLMProvider`, `OllamaProvider`, `GeminiProvider`, `ModelRouter`, structured output repair, budget guardrails, `/api/llm/status` & `/api/projects/{project_id}/usage`).
 - [x] Milestone 4 – Research Engine (`0003_research_engine`, `DuckDuckGoSearchProvider`/`TavilySearchProvider`, `WebExtractor` with `trafilatura`, URL & checksum deduplication, grounded `ResearchReport` via `ModelRouter`, Research API & Workspace tab).
-- [ ] Begin Milestone 5 – Fact Checking & Competitor Analysis (`claims`, `claim_sources`, `competitor_videos` migration, claim extraction & evidence-based fact checker, public YouTube competitor metadata & content-gap report, research approval gate).
+- [x] Milestone 5 – Fact Checking & Competitor Analysis (`0004_fact_check_competitors`, evidence-grounded `FactCheckService`, YouTube public metadata & `CompetitorService`, Gate 2 research approval creation, Fact Checking & Competitors Workspace tabs).
+- [ ] Begin Milestone 6 – Scriptwriting and Storyboarding (`scripts`, `script_versions`, `scenes` migration, Hinglish scriptwriter grounded in `channel_guidelines` + approved research, script validation & versioning, scene-by-scene storyboard + asset requirements, Gate 3 script approval).
 
 ### Initial Commands
 
