@@ -31,3 +31,4 @@ class ProjectConfig(BaseModel):
     auto_approve: bool = False
     llm_provider: LLMProviderPreference = "default"
     llm_model: str | None = Field(default=None, max_length=120)
+    registered_model_id: str | None = Field(default=None, max_length=64)

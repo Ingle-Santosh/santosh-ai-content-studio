@@ -50,7 +50,13 @@ def test_alembic_upgrade_and_downgrade_roundtrip(tmp_path: Path, monkeypatch) ->
         "script_versions",
         "scenes",
         "evaluations",
+        "registered_models",
     }.issubset(tables_at_head)
+
+    command.downgrade(alembic_cfg, "0006_evaluations")
+    tables_at_0006 = _list_tables(db_path)
+    assert "evaluations" in tables_at_0006
+    assert "registered_models" not in tables_at_0006
 
     command.downgrade(alembic_cfg, "0005_scripts_and_storyboard")
     tables_at_0005 = _list_tables(db_path)

@@ -5,13 +5,18 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from content_studio.providers.llm.types import ProviderHealth
 
-CloudProviderName = Literal["gemini", "openai", "anthropic", "openai_compatible"]
+CloudProviderName = Literal[
+    "gemini", "openai", "anthropic", "openrouter", "groq", "openai_compatible"
+]
 
 
 class LLMConfigUpdateRequest(BaseModel):
     local_only: bool | None = None
     prefer_cloud_default: bool | None = None
     cloud_tasks: list[str] | None = None
+    small_model_id: str | None = Field(default=None, max_length=64)
+    powerful_model_id: str | None = Field(default=None, max_length=64)
+    task_model_ids: dict[str, str] | None = None
     cloud_provider: CloudProviderName | None = None
     cloud_default_model: str | None = Field(default=None, max_length=160)
     cloud_base_url: str | None = Field(default=None, max_length=300)
@@ -29,6 +34,9 @@ class LLMStatusResponse(BaseModel):
     local_only: bool
     prefer_cloud_default: bool = False
     cloud_tasks: list[str] = Field(default_factory=list)
+    small_model_id: str | None = None
+    powerful_model_id: str | None = None
+    task_model_ids: dict[str, str] = Field(default_factory=dict)
     cloud_provider: str = "gemini"
     cloud_default_model: str = ""
     cloud_base_url: str = ""

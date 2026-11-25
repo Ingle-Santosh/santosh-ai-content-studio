@@ -21,4 +21,4 @@ Competitor Positioning Notes:
 Revision Instructions (if revising an earlier draft):
 {revision_block}
 
-Generate all 9 structured script sections and return valid JSON.
+IMPORTANT: Write every section's `narration` strictly in `{language}` (if `Hinglish`, use natural conversational Romanized Hindi + English technical terms throughout ALL 9 sections, never pure English). Generate all 9 structured script sections and return valid JSON.

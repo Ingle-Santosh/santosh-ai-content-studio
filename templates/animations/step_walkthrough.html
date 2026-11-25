@@ -6,124 +6,193 @@
   <title>__TITLE__ — Santosh Analytics</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
+      --bg: #070d19;
+      --surface: #0f172a;
+      --card: #162238;
+      --border: #283956;
       --accent: #38bdf8;
+      --accent2: #818cf8;
+      --success: #34d399;
       --text: #f8fafc;
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg);
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      background:
+        radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.14), transparent 40%),
+        radial-gradient(circle at 15% 85%, rgba(129, 140, 248, 0.14), transparent 45%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
     }
     .stage {
       width: 100%;
-      max-width: 960px;
-      background: var(--card);
+      max-width: 1080px;
+      background: rgba(15, 23, 42, 0.92);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      border-radius: 22px;
+      padding: 36px 40px;
+      box-shadow: 0 28px 65px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
     }
     .brand {
       font-size: 12px;
-      letter-spacing: 0.14em;
+      font-weight: 700;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--accent);
-      margin-bottom: 8px;
     }
-    h1 { font-size: 28px; margin-bottom: 6px; }
-    .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 15px; }
+    .counter {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--success);
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 15px; }
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.35s ease;
+    }
     .timeline {
       display: flex;
+      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 24px;
     }
     .pill {
-      padding: 8px 14px;
+      padding: 9px 16px;
       border-radius: 999px;
-      background: #0f172a;
+      background: var(--card);
       border: 1px solid var(--border);
       color: var(--muted);
       font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.25s ease;
     }
+    .pill.done {
+      border-color: rgba(52, 211, 153, 0.55);
+      color: var(--success);
+    }
     .pill.active {
-      background: var(--accent);
-      color: #0f172a;
-      border-color: var(--accent);
-      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #070d19;
+      border-color: transparent;
+      font-weight: 800;
       transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
     }
     .panel {
-      background: #0b1220;
+      background: linear-gradient(180deg, #0b1324, #0f1a30);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      min-height: 180px;
-      transition: opacity 0.3s ease;
+      border-left: 5px solid var(--accent);
+      border-radius: 16px;
+      padding: 28px 30px;
+      min-height: 210px;
+      animation: slideIn 0.32s ease;
     }
-    .step-title { font-size: 20px; color: var(--accent); margin-bottom: 10px; }
-    .step-desc { font-size: 16px; line-height: 1.6; color: var(--text); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .step-title { font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+    .step-desc { font-size: 17px; line-height: 1.65; color: var(--text); }
     .highlight {
-      margin-top: 16px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      background: #172554;
-      border-left: 4px solid var(--accent);
+      margin-top: 18px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(23, 37, 84, 0.72);
+      border: 1px solid rgba(56, 189, 248, 0.4);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 14px;
       white-space: pre-wrap;
       color: #e0f2fe;
     }
-    .controls {
+    .footer-bar {
       display: flex;
-      gap: 10px;
-      margin-top: 22px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
+    .controls { display: flex; gap: 10px; }
     button.ctrl {
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
       border: 1px solid var(--border);
-      background: #0f172a;
+      background: var(--card);
       color: var(--text);
       font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
+    button.ctrl:hover { background: #223250; }
     button.ctrl.primary {
       background: var(--accent);
-      color: #0f172a;
+      color: #070d19;
       border-color: var(--accent);
-      font-weight: 600;
+      font-weight: 700;
     }
+    .hint { font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
   <main class="stage">
-    <div class="brand">Santosh Analytics · Interactive Visual</div>
+    <div class="top-bar">
+      <div class="brand">Santosh Analytics · Interactive Motion Explainer</div>
+      <div id="step-counter" class="counter">Step 1 / 1</div>
+    </div>
     <h1>__TITLE__</h1>
     <p class="subtitle">__SUBTITLE__</p>
+    <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
     <div id="timeline" class="timeline"></div>
-    <section class="panel">
+    <section id="step-panel" class="panel">
       <h2 id="step-title" class="step-title"></h2>
       <p id="step-desc" class="step-desc"></p>
       <pre id="step-highlight" class="highlight" style="display:none;"></pre>
     </section>
-    <div class="controls">
-      <button id="btn-prev" class="ctrl" type="button">Previous</button>
-      <button id="btn-play" class="ctrl primary" type="button">Play</button>
-      <button id="btn-next" class="ctrl" type="button">Next</button>
-      <button id="btn-reset" class="ctrl" type="button">Reset</button>
+    <div class="footer-bar">
+      <div class="controls">
+        <button id="btn-prev" class="ctrl" type="button">← Previous</button>
+        <button id="btn-play" class="ctrl primary" type="button">▶ Auto-Play</button>
+        <button id="btn-next" class="ctrl" type="button">Next →</button>
+        <button id="btn-reset" class="ctrl" type="button">↺ Reset</button>
+      </div>
+      <div class="hint">Keys: ← / → navigate · Space play/pause · R reset</div>
     </div>
   </main>
   <script>
@@ -132,9 +201,12 @@
     let timer = null;
 
     const timelineEl = document.getElementById("timeline");
+    const panelEl = document.getElementById("step-panel");
     const titleEl = document.getElementById("step-title");
     const descEl = document.getElementById("step-desc");
     const hlEl = document.getElementById("step-highlight");
+    const counterEl = document.getElementById("step-counter");
+    const progressEl = document.getElementById("progress-fill");
     const playBtn = document.getElementById("btn-play");
 
     function render() {
@@ -142,12 +214,18 @@
       STEPS.forEach((step, idx) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "pill" + (idx === current ? " active" : "");
+        const cls = idx === current ? "pill active" : idx < current ? "pill done" : "pill";
+        btn.className = cls;
         btn.textContent = (idx + 1) + ". " + step.label;
         btn.addEventListener("click", () => { current = idx; render(); });
         timelineEl.appendChild(btn);
       });
       const active = STEPS[current];
+      counterEl.textContent = "Step " + (current + 1) + " / " + STEPS.length;
+      progressEl.style.width = (((current + 1) / STEPS.length) * 100) + "%";
+      panelEl.style.animation = "none";
+      void panelEl.offsetWidth;
+      panelEl.style.animation = "";
       titleEl.textContent = "Step " + (current + 1) + ": " + active.label;
       descEl.textContent = active.description;
       if (active.highlight_text) {
@@ -156,6 +234,20 @@
       } else {
         hlEl.style.display = "none";
         hlEl.textContent = "";
+      }
+    }
+
+    function togglePlay() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        playBtn.textContent = "▶ Auto-Play";
+      } else {
+        playBtn.textContent = "⏸ Pause";
+        timer = setInterval(() => {
+          current = (current + 1) % STEPS.length;
+          render();
+        }, 3000);
       }
     }
 
@@ -168,21 +260,26 @@
       render();
     });
     document.getElementById("btn-reset").addEventListener("click", () => {
-      if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "Play"; }
+      if (timer) { togglePlay(); }
       current = 0;
       render();
     });
-    playBtn.addEventListener("click", () => {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-        playBtn.textContent = "Play";
-      } else {
-        playBtn.textContent = "Pause";
-        timer = setInterval(() => {
-          current = (current + 1) % STEPS.length;
-          render();
-        }, 2500);
+    playBtn.addEventListener("click", togglePlay);
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowRight") {
+        current = (current + 1) % STEPS.length;
+        render();
+      } else if (ev.key === "ArrowLeft") {
+        current = (current - 1 + STEPS.length) % STEPS.length;
+        render();
+      } else if (ev.key === " ") {
+        ev.preventDefault();
+        togglePlay();
+      } else if (ev.key.toLowerCase() === "r") {
+        if (timer) { togglePlay(); }
+        current = 0;
+        render();
       }
     });
 

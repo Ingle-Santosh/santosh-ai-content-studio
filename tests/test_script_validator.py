@@ -69,3 +69,27 @@ def test_script_validator_detects_missing_sections_and_warnings() -> None:
     assert any("code_demo_references" in w for w in report.warnings)
     assert any("not present in extracted project sources" in w for w in report.warnings)
     assert any("unsupported/conflicting claim" in w for w in report.warnings)
+
+
+def test_script_validator_flags_pure_english_when_hinglish_requested() -> None:
+    english_only = [
+        ScriptSectionItem(
+            section_type=sec_type,
+            title=sec_type.value.replace("_", " ").title(),
+            narration=(
+                "Hello everyone, welcome to this technical video tutorial where we configure "
+                "role based access control and row level security in Apache Superset."
+            ),
+            visual_instructions=f"Show visual for {sec_type.value}.",
+            code_demo_references=(
+                ["demo.py"] if sec_type == ScriptSectionType.PRACTICAL_DEMONSTRATION else []
+            ),
+            estimated_duration_seconds=100,
+        )
+        for sec_type in REQUIRED_SECTIONS
+    ]
+    hinglish_report = validate_script_sections(english_only, language="Hinglish")
+    assert any("pure English" in w for w in hinglish_report.warnings)
+
+    english_report = validate_script_sections(english_only, language="English")
+    assert not any("pure English" in w for w in english_report.warnings)

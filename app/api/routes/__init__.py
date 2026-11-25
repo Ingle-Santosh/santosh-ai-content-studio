@@ -7,6 +7,7 @@ from app.api.routes.fact_check import router as fact_check_router
 from app.api.routes.guidelines import router as guidelines_router
 from app.api.routes.health import router as health_router
 from app.api.routes.llm import router as llm_router
+from app.api.routes.model_registry import router as model_registry_router
 from app.api.routes.production import router as production_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.research import router as research_router
@@ -25,6 +26,7 @@ __all__ = [
     "guidelines_router",
     "health_router",
     "llm_router",
+    "model_registry_router",
     "production_router",
     "projects_router",
     "research_router",

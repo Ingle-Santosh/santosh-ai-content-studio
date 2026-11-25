@@ -27,9 +27,12 @@ class Settings(BaseSettings):
     OLLAMA_FAST_MODEL: str | None = None
 
     # Optional Cloud LLM providers (disabled by default via LOCAL_ONLY=True)
-    # Supported providers: "gemini", "openai", "anthropic", "openai_compatible"
+    # Supported: gemini, openai, anthropic, openrouter, groq, openai_compatible
     PREFER_CLOUD_DEFAULT: bool = False
     CLOUD_TASKS: list[str] = Field(default_factory=list)
+    SMALL_MODEL_ID: str | None = None
+    POWERFUL_MODEL_ID: str | None = None
+    TASK_MODEL_IDS: dict[str, str] = Field(default_factory=dict)
     CLOUD_LLM_PROVIDER: str = "gemini"
     CLOUD_API_KEY: str | None = None
     CLOUD_BASE_URL: str | None = None

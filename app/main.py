@@ -17,6 +17,7 @@ from app.api.routes import (
     guidelines_router,
     health_router,
     llm_router,
+    model_registry_router,
     production_router,
     projects_router,
     research_router,
@@ -105,6 +106,7 @@ def create_app() -> FastAPI:
     application.include_router(guidelines_router)
     application.include_router(approvals_router)
     application.include_router(llm_router)
+    application.include_router(model_registry_router)
     application.include_router(research_router)
     application.include_router(fact_check_router)
     application.include_router(competitors_router)

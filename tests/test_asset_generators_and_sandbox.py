@@ -26,15 +26,19 @@ from content_studio.services.screenshot_utils import (
 
 
 def test_mermaid_validation_and_fallback_svg_rendering() -> None:
-    good = 'flowchart TD\n    A["User Query"] --> B["Vector DB"]\n    B --> C["LLM Answer"]\n'
+    good = (
+        'flowchart TD\n    A["User Query"] -->|Embed| B["Vector DB"]\n    B --> C["LLM Answer"]\n'
+    )
     assert validate_mermaid_syntax(good) == []
 
     svg = render_fallback_svg(good, title="RAG Flow")
     assert svg.startswith("<svg ")
     assert "Vector DB" in svg
-    assert "<line " in svg
+    assert "Embed" in svg
+    assert "<path " in svg
 
     assert validate_mermaid_syntax("invalidHeader\nA --> B") != []
+    assert validate_mermaid_syntax("flowchart TD\n  A[") != []
     assert validate_mermaid_syntax("") != []
 
 

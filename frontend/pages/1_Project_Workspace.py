@@ -1,6 +1,7 @@
 import base64
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from content_studio.config.settings import settings
 from content_studio.database.models.enums import ArtifactType
@@ -41,77 +42,52 @@ meta_cols[3].metric("Spent (USD)", f"${project.get('spent_usd', 0.0):.2f}")
 proj_cfg = dict(project.get("config") or {})
 current_proj_provider = str(proj_cfg.get("llm_provider") or "default")
 current_proj_model = str(proj_cfg.get("llm_model") or "")
-with st.expander(
-    f"🤖 Model & Budget Override (Provider: `{current_proj_provider}` · "
-    f"Model: `{current_proj_model or 'Settings default'}`)"
-):
-    try:
-        llm_info = client.get_llm_status()
-        provs = {p["provider"]: p for p in llm_info.get("providers", [])}
-        discovered_ollama = list(provs.get("ollama", {}).get("models", []))
-        discovered_gemini = list(provs.get("gemini", {}).get("models", [])) or [
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-2.5-flash-lite",
-            "gemini-2.0-flash",
-        ]
-    except StudioAPIError:
-        discovered_ollama = []
-        discovered_gemini = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]
+current_reg_id = str(proj_cfg.get("registered_model_id") or "")
+
+try:
+    reg_items = list(client.list_registered_models().get("items", []))
+except StudioAPIError:
+    reg_items = []
+reg_map = {m["id"]: m for m in reg_items}
+reg_badge = (
+    reg_map[current_reg_id]["name"]
+    if current_reg_id and current_reg_id in reg_map
+    else (current_proj_model or "Settings Hybrid Routing")
+)
+
+with st.expander(f"🤖 Model & Budget Override (Active: `{reg_badge}`)"):
+    reg_select_ids = ["(Use Settings Hybrid Routing)", *[m["id"] for m in reg_items]]
+
+    def _fmt_ws_reg(mid: str) -> str:
+        if mid not in reg_map:
+            return mid
+        m = reg_map[mid]
+        return f"{m['name']} ({m['provider']}/{m['model_id']})"
 
     with st.form(f"project_model_override_{project_id}"):
-        m_col1, m_col2, m_col3 = st.columns([1, 2, 1])
-        provider_opts = ["default", "ollama", "cloud"]
-        normalized_proj_provider = (
-            "cloud"
-            if current_proj_provider in {"gemini", "openai", "anthropic", "openai_compatible"}
-            else current_proj_provider
+        m_col1, m_col2 = st.columns([2, 1])
+        r_idx = reg_select_ids.index(current_reg_id) if current_reg_id in reg_select_ids else 0
+        chosen_reg_id = m_col1.selectbox(
+            "Select Model from Model Registry (optional override)",
+            reg_select_ids,
+            index=r_idx,
+            format_func=_fmt_ws_reg,
+            help="Register models in Settings -> Model Registry first, then pick any model here.",
         )
-        p_idx = (
-            provider_opts.index(normalized_proj_provider)
-            if normalized_proj_provider in provider_opts
-            else 0
-        )
-        chosen_provider = m_col1.selectbox(
-            "Project Provider",
-            provider_opts,
-            index=p_idx,
-            help=(
-                "'default' uses Settings (including Hybrid Tiered mode); "
-                "'ollama' forces local; 'cloud' forces active Cloud provider."
-            ),
-        )
-        suggested_models = (
-            [m for m in discovered_ollama if m != "qwen2.5-coder:14b"]
-            if chosen_provider == "ollama"
-            else discovered_gemini
-            if chosen_provider == "cloud"
-            else [*[m for m in discovered_ollama if m != "qwen2.5-coder:14b"], *discovered_gemini]
-        )
-        model_placeholder = (
-            f"Leave blank for Settings default (e.g., {', '.join(suggested_models[:3])})"
-            if suggested_models
-            else "Leave blank for Settings default"
-        )
-        chosen_model = m_col2.text_input(
-            "Model Override (optional)",
-            value=current_proj_model,
-            placeholder=model_placeholder,
-        )
-        proj_budget = m_col3.number_input(
-            "Project Budget (USD)",
+        proj_budget = m_col2.number_input(
+            "Project Paid Budget (USD)",
             min_value=0.0,
             max_value=500.0,
             value=float(project.get("budget_usd", 0.0)),
             step=0.5,
-            help="Set > $0.00 to enable Cloud calls (OpenAI/Claude/Gemini) for this project.",
+            help="Needed only for paid API models; free OpenRouter/Groq/Ollama models work at $0.",
         )
         if st.form_submit_button("Save Project Model & Budget"):
             updated_cfg = dict(proj_cfg)
-            updated_cfg["llm_provider"] = chosen_provider
-            updated_cfg["llm_model"] = chosen_model.strip() or None
-            if chosen_provider == "cloud":
-                updated_cfg["cloud_fallback_enabled"] = True
+            if chosen_reg_id == "(Use Settings Hybrid Routing)":
+                updated_cfg["registered_model_id"] = None
+            else:
+                updated_cfg["registered_model_id"] = chosen_reg_id
             try:
                 client.update_project(
                     project_id,
@@ -664,6 +640,77 @@ with tab_assets:
                 st.error("Asset QA FAILED: " + " | ".join(qa.get("blocking_issues", [])))
         except StudioAPIError as exc:
             st.error(str(exc))
+
+    st.divider()
+    st.markdown("### Generated Visual & Code Assets Gallery")
+    try:
+        visual_artifacts = [
+            a
+            for a in client.list_artifacts(project_id)
+            if a["artifact_type"]
+            in {
+                ArtifactType.DIAGRAM_SVG.value,
+                ArtifactType.HTML_ANIMATION.value,
+                ArtifactType.IMAGE.value,
+                ArtifactType.CODE_DEMO.value,
+                ArtifactType.SCREENSHOT.value,
+            }
+            and a["status"] != "SUPERSEDED"
+        ]
+    except StudioAPIError as exc:
+        st.error(str(exc))
+        visual_artifacts = []
+
+    if not visual_artifacts:
+        st.caption(
+            "No visual or code assets generated yet. "
+            "Click 'Generate All Planned Assets + QA' above."
+        )
+    else:
+        for vart in visual_artifacts:
+            header = (
+                f"{vart['name']} (`{vart['artifact_type']}` · "
+                f"v{vart['version']} · `{vart['status']}`)"
+            )
+            with st.expander(header, expanded=(vart == visual_artifacts[0])):
+                atype = vart["artifact_type"]
+                try:
+                    if atype in {ArtifactType.DIAGRAM_SVG.value, ArtifactType.IMAGE.value}:
+                        content_resp = client.get_artifact_content(project_id, vart["id"])
+                        svg_text = content_resp["content"]
+                        components.html(
+                            f'<div style="background:#070d19;padding:8px;border-radius:12px;'
+                            f'display:flex;justify-content:center;">{svg_text}</div>',
+                            height=520,
+                            scrolling=True,
+                        )
+                        st.download_button(
+                            label=f"Download {vart['name']}",
+                            data=svg_text.encode("utf-8"),
+                            file_name=vart["name"],
+                            mime="image/svg+xml",
+                            key=f"dl_vis_{vart['id']}",
+                        )
+                    elif atype == ArtifactType.HTML_ANIMATION.value:
+                        content_resp = client.get_artifact_content(project_id, vart["id"])
+                        html_text = content_resp["content"]
+                        components.html(html_text, height=600, scrolling=True)
+                        st.download_button(
+                            label=f"Download {vart['name']}",
+                            data=html_text.encode("utf-8"),
+                            file_name=vart["name"],
+                            mime="text/html",
+                            key=f"dl_vis_{vart['id']}",
+                        )
+                    elif atype == ArtifactType.CODE_DEMO.value:
+                        content_resp = client.get_artifact_content(project_id, vart["id"])
+                        lang = "sql" if vart["name"].endswith(".sql") else "python"
+                        st.code(content_resp["content"], language=lang)
+                    elif atype == ArtifactType.SCREENSHOT.value:
+                        raw_bytes = client.download_artifact_bytes(project_id, vart["id"])
+                        st.image(raw_bytes, caption=vart["name"])
+                except StudioAPIError as exc:
+                    st.warning(f"Could not preview {vart['name']}: {exc}")
 
     st.divider()
     st.markdown("### Upload Screenshot (With Mandatory Provenance)")

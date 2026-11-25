@@ -23,6 +23,13 @@ from content_studio.services.guideline_service import (
     DEFAULT_GUIDELINE_SLUG,
     ChannelGuidelineService,
 )
+from content_studio.services.model_registry_service import (
+    RECOMMENDED_MODEL_PRESETS,
+    ModelConnectionTestResult,
+    ModelPreset,
+    ModelRegistryKeyStore,
+    ModelRegistryService,
+)
 from content_studio.services.production_service import ProductionService
 from content_studio.services.research_service import ResearchService
 from content_studio.services.script_service import (
@@ -63,8 +70,13 @@ __all__ = [
     "DEFAULT_GUIDELINE_SLUG",
     "ExtractedPage",
     "FactCheckService",
+    "ModelConnectionTestResult",
+    "ModelPreset",
+    "ModelRegistryKeyStore",
+    "ModelRegistryService",
     "ProductionService",
     "ProjectNotFoundError",
+    "RECOMMENDED_MODEL_PRESETS",
     "REQUIRED_SECTIONS",
     "ResearchNotApprovedError",
     "ResearchService",

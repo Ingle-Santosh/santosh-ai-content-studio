@@ -5,6 +5,7 @@ from content_studio.database.repositories.competitor_repository import Competito
 from content_studio.database.repositories.evaluation_repository import EvaluationRepository
 from content_studio.database.repositories.fact_check_repository import FactCheckRepository
 from content_studio.database.repositories.guideline_repository import ChannelGuidelineRepository
+from content_studio.database.repositories.model_registry_repository import ModelRegistryRepository
 from content_studio.database.repositories.project_repository import ProjectRepository
 from content_studio.database.repositories.research_repository import ResearchRepository
 from content_studio.database.repositories.run_repository import RunRepository
@@ -20,6 +21,7 @@ __all__ = [
     "CompetitorRepository",
     "EvaluationRepository",
     "FactCheckRepository",
+    "ModelRegistryRepository",
     "ProjectRepository",
     "ResearchRepository",
     "RunRepository",

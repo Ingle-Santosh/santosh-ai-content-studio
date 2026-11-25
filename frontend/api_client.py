@@ -213,6 +213,9 @@ class StudioAPIClient:
         local_only: bool | None = None,
         prefer_cloud_default: bool | None = None,
         cloud_tasks: list[str] | None = None,
+        small_model_id: str | None = None,
+        powerful_model_id: str | None = None,
+        task_model_ids: dict[str, str] | None = None,
         cloud_provider: str | None = None,
         cloud_default_model: str | None = None,
         cloud_base_url: str | None = None,
@@ -232,6 +235,12 @@ class StudioAPIClient:
             body["prefer_cloud_default"] = prefer_cloud_default
         if cloud_tasks is not None:
             body["cloud_tasks"] = cloud_tasks
+        if small_model_id is not None:
+            body["small_model_id"] = small_model_id
+        if powerful_model_id is not None:
+            body["powerful_model_id"] = powerful_model_id
+        if task_model_ids is not None:
+            body["task_model_ids"] = task_model_ids
         if cloud_provider is not None:
             body["cloud_provider"] = cloud_provider
         if cloud_default_model is not None:
@@ -618,3 +627,45 @@ class StudioAPIClient:
 
     def get_system_metrics(self) -> dict[str, Any]:
         return dict(self._request("GET", "/api/system/metrics"))
+
+    # Model Registry
+    def list_registered_models(self) -> dict[str, Any]:
+        return dict(self._request("GET", "/api/models/registry"))
+
+    def register_model(
+        self,
+        *,
+        name: str,
+        provider: str,
+        model_id: str,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        tier: str | None = None,
+        input_cost_per_1m: float = 0.0,
+        output_cost_per_1m: float = 0.0,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "name": name,
+            "provider": provider,
+            "model_id": model_id,
+            "base_url": base_url or None,
+            "api_key": api_key or None,
+            "tier": tier or None,
+            "input_cost_per_1m": input_cost_per_1m,
+            "output_cost_per_1m": output_cost_per_1m,
+            "notes": notes or None,
+        }
+        return dict(self._request("POST", "/api/models/registry", json=body))
+
+    def delete_registered_model(self, registry_id: str) -> None:
+        self._request("DELETE", f"/api/models/registry/{registry_id}")
+
+    def test_registered_model(self, registry_id: str) -> dict[str, Any]:
+        return dict(
+            self._request(
+                "POST",
+                f"/api/models/registry/{registry_id}/test",
+                timeout=45.0,
+            )
+        )

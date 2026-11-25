@@ -36,7 +36,10 @@ from content_studio.services.artifact_service import (
     ResourceNotFoundError,
 )
 from content_studio.services.guideline_service import ChannelGuidelineService
-from content_studio.services.script_validator import validate_script_sections
+from content_studio.services.script_validator import (
+    count_hinglish_markers,
+    validate_script_sections,
+)
 
 
 class WorkflowGateError(RuntimeError):
@@ -187,6 +190,7 @@ class ScriptwriterService:
             sections,
             target_duration_minutes=int(project.config.get("duration_minutes", 15)),
             include_code_demo=bool(project.config.get("include_code_demo", True)),
+            language=language,
             known_source_urls=known_urls,
             unsupported_claim_count=len(risky_claims),
         )
@@ -382,6 +386,45 @@ class ScriptwriterService:
                 node_name="scriptwriter",
             )
             generated = llm_result.data
+
+            # Safeguard: if Hinglish was requested but model produced pure English, run 1 rewrite
+            effective_lang = (generated.language or language).strip()
+            if effective_lang.lower() == "hinglish":
+                combined = " ".join(sec.narration for sec in generated.sections)
+                if count_hinglish_markers(combined) < 4:
+                    try:
+                        rewrite_result = await self._model_router.generate_structured(
+                            task=TaskType.SCRIPTWRITING,
+                            messages=[
+                                LLMMessage(role="system", content=system_prompt),
+                                LLMMessage(
+                                    role="user",
+                                    content=(
+                                        "Your previous draft was written in pure English, NOT "
+                                        "Hinglish. Rewrite ALL 9 sections so every `narration` is "
+                                        "natural conversational Hinglish (Romanized Hindi sentence "
+                                        "structure like 'Namaste dosto! Aaj hum... samjhenge, "
+                                        "kyunki... dekhte hain') while keeping technical terms in "
+                                        "exact English. Keep the same 9 section types and return "
+                                        "valid JSON.\n\n"
+                                        f"Previous draft JSON:\n{generated.model_dump_json()}"
+                                    ),
+                                ),
+                            ],
+                            response_model=ScriptLLMOutput,
+                            project_id=project.id,
+                            run_id=run_id,
+                            node_name="scriptwriter_hinglish_rewrite",
+                        )
+                        rewritten_text = " ".join(
+                            sec.narration for sec in rewrite_result.data.sections
+                        )
+                        if count_hinglish_markers(rewritten_text) >= count_hinglish_markers(
+                            combined
+                        ):
+                            generated = rewrite_result.data
+                    except Exception:  # noqa: BLE001
+                        pass
 
             report = await self._persist_version(
                 project=project,

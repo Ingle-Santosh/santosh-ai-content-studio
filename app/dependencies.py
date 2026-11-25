@@ -12,6 +12,7 @@ from content_studio.database.repositories import (
     CompetitorRepository,
     EvaluationRepository,
     FactCheckRepository,
+    ModelRegistryRepository,
     ProjectRepository,
     ResearchRepository,
     RunRepository,
@@ -33,6 +34,7 @@ from content_studio.services import (
     ChannelGuidelineService,
     CompetitorService,
     FactCheckService,
+    ModelRegistryService,
     ProductionService,
     ResearchService,
     ScriptwriterService,
@@ -133,6 +135,22 @@ def get_evaluation_repository(
     return EvaluationRepository(session)
 
 
+def get_model_registry_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> ModelRegistryRepository:
+    return ModelRegistryRepository(session)
+
+
+def get_model_registry_service(
+    app_settings: Annotated[Settings, Depends(get_settings)],
+    registry_repo: Annotated[ModelRegistryRepository, Depends(get_model_registry_repository)],
+) -> ModelRegistryService:
+    return ModelRegistryService(
+        app_settings=app_settings,
+        registry_repo=registry_repo,
+    )
+
+
 def get_artifact_service(
     project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
     artifact_repo: Annotated[ArtifactRepository, Depends(get_artifact_repository)],
@@ -167,11 +185,13 @@ def get_model_router(
     app_settings: Annotated[Settings, Depends(get_settings)],
     usage_repo: Annotated[UsageRepository, Depends(get_usage_repository)],
     project_repo: Annotated[ProjectRepository, Depends(get_project_repository)],
+    registry_service: Annotated[ModelRegistryService, Depends(get_model_registry_service)],
 ) -> ModelRouter:
     return ModelRouter(
         app_settings=app_settings,
         usage_repo=usage_repo,
         project_repo=project_repo,
+        registry_service=registry_service,
     )
 
 

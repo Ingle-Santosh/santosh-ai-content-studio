@@ -74,6 +74,7 @@ class ModelRouter:
         cloud_provider: BaseLLMProvider | None = None,
         usage_repo: UsageRepository | None = None,
         project_repo: ProjectRepository | None = None,
+        registry_service: object | None = None,
     ) -> None:
         self._settings = app_settings
         self._local_provider: BaseLLMProvider = local_provider or OllamaProvider(
@@ -85,6 +86,7 @@ class ModelRouter:
         )
         self._usage_repo = usage_repo
         self._project_repo = project_repo
+        self._registry_service: object | None = registry_service
 
     @staticmethod
     def _resolve_cloud_api_key(app_settings: Settings, provider_name: str) -> str | None:
@@ -129,7 +131,7 @@ class ModelRouter:
                 base_url=base_url,
                 default_timeout=app_settings.LLM_TIMEOUT_SECONDS,
             )
-        if provider_name in {"openai", "openai_compatible"}:
+        if provider_name in {"openai", "openrouter", "groq", "openai_compatible"}:
             return OpenAICompatibleProvider(
                 api_key=api_key,
                 base_url=base_url,
@@ -290,6 +292,76 @@ class ModelRouter:
             is_cloud=True,
         )
 
+    async def _resolve_registry_candidate(
+        self,
+        *,
+        task: TaskType,
+        project: Project | None,
+        current_global_spend: float,
+        strict_cloud: bool,
+    ) -> tuple[RouteDecision, BaseLLMProvider] | None:
+        if self._registry_service is None:
+            return None
+
+        candidate_id: str | None = None
+        if project is not None and project.config:
+            raw_proj_id = project.config.get("registered_model_id")
+            if raw_proj_id:
+                candidate_id = str(raw_proj_id).strip()
+
+        if not candidate_id:
+            candidate_id = (self._settings.TASK_MODEL_IDS or {}).get(task.value)
+
+        if not candidate_id:
+            cloud_tasks = {t.strip().lower() for t in self._settings.CLOUD_TASKS}
+            if (
+                self._settings.PREFER_CLOUD_DEFAULT or task.value in cloud_tasks
+            ) and self._settings.POWERFUL_MODEL_ID:
+                candidate_id = self._settings.POWERFUL_MODEL_ID
+            elif self._settings.SMALL_MODEL_ID:
+                candidate_id = self._settings.SMALL_MODEL_ID
+
+        if not candidate_id:
+            return None
+
+        try:
+            entry = await self._registry_service.get_model(candidate_id)  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001
+            return None
+        if not entry.is_active:
+            return None
+
+        if entry.is_cloud:
+            if self._settings.LOCAL_ONLY:
+                if strict_cloud:
+                    raise BudgetExceededError("Cloud LLM calls disabled because LOCAL_ONLY=true.")
+                return None
+
+            is_paid = (entry.input_cost_per_1m > 0.0) or (entry.output_cost_per_1m > 0.0)
+            if is_paid:
+                if (
+                    self._settings.MAX_BUDGET_USD <= 0.0
+                    or current_global_spend >= self._settings.MAX_BUDGET_USD
+                ):
+                    if strict_cloud:
+                        raise BudgetExceededError("Global LLM budget exhausted.")
+                    return None
+                if project is not None and (
+                    project.budget_usd <= 0.0 or project.spent_usd >= project.budget_usd
+                ):
+                    if strict_cloud:
+                        raise BudgetExceededError("Project budget exhausted.")
+                    return None
+
+        provider = self._registry_service.build_provider_for_model(entry)  # type: ignore[attr-defined]
+        route = RouteDecision(
+            task=task,
+            provider=entry.provider,
+            model=entry.model_id,
+            is_cloud=entry.is_cloud,
+        )
+        return route, provider
+
     async def resolve_route(
         self,
         task: TaskType,
@@ -305,6 +377,15 @@ class ModelRouter:
         global_spend = 0.0
         if self._usage_repo is not None:
             global_spend = await self._usage_repo.total_spend_all()
+
+        reg_hit = await self._resolve_registry_candidate(
+            task=task,
+            project=project,
+            current_global_spend=global_spend,
+            strict_cloud=strict_cloud,
+        )
+        if reg_hit is not None:
+            return reg_hit[0]
 
         return self._decide_route(
             task=task,
@@ -391,19 +472,35 @@ class ModelRouter:
         strict_cloud: bool = False,
         fallback_to_local_on_error: bool = True,
     ) -> tuple[LLMResponse, RouteDecision]:
-        route = await self.resolve_route(
-            task,
-            project_id=project_id,
-            prefer_cloud=prefer_cloud,
+        project: Project | None = None
+        if project_id is not None and self._project_repo is not None:
+            project = await self._project_repo.get_by_id(project_id)
+        global_spend = 0.0
+        if self._usage_repo is not None:
+            global_spend = await self._usage_repo.total_spend_all()
+
+        reg_hit = await self._resolve_registry_candidate(
+            task=task,
+            project=project,
+            current_global_spend=global_spend,
             strict_cloud=strict_cloud,
         )
+        if reg_hit is not None:
+            route, provider = reg_hit
+        else:
+            route = self._decide_route(
+                task=task,
+                prefer_cloud=prefer_cloud,
+                strict_cloud=strict_cloud,
+                project=project,
+                current_global_spend=global_spend,
+            )
+            provider = (
+                self._cloud_provider
+                if route.is_cloud and self._cloud_provider is not None
+                else self._local_provider
+            )
         effective_node = node_name or task.value
-
-        provider = (
-            self._cloud_provider
-            if route.is_cloud and self._cloud_provider is not None
-            else self._local_provider
-        )
         request = LLMRequest(
             messages=messages,
             model=route.model,

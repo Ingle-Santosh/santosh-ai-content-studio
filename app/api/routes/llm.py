@@ -37,6 +37,9 @@ async def _build_llm_status(
         local_only=app_settings.LOCAL_ONLY,
         prefer_cloud_default=app_settings.PREFER_CLOUD_DEFAULT,
         cloud_tasks=list(app_settings.CLOUD_TASKS),
+        small_model_id=app_settings.SMALL_MODEL_ID,
+        powerful_model_id=app_settings.POWERFUL_MODEL_ID,
+        task_model_ids=dict(app_settings.TASK_MODEL_IDS),
         cloud_provider=active_cloud_provider,
         cloud_default_model=active_cloud_model,
         cloud_base_url=active_cloud_url,
@@ -79,6 +82,17 @@ async def update_llm_config(
         app_settings.CLOUD_TASKS = [
             t.strip().lower() for t in payload.cloud_tasks if t.strip().lower() in valid_tasks
         ]
+    if payload.small_model_id is not None:
+        app_settings.SMALL_MODEL_ID = payload.small_model_id.strip() or None
+    if payload.powerful_model_id is not None:
+        app_settings.POWERFUL_MODEL_ID = payload.powerful_model_id.strip() or None
+    if payload.task_model_ids is not None:
+        valid_tasks = {t.value for t in TaskType}
+        app_settings.TASK_MODEL_IDS = {
+            k.strip().lower(): v.strip()
+            for k, v in payload.task_model_ids.items()
+            if k.strip().lower() in valid_tasks and v.strip()
+        }
     if payload.cloud_provider is not None:
         app_settings.CLOUD_LLM_PROVIDER = payload.cloud_provider
     if payload.cloud_default_model is not None:

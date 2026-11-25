@@ -67,15 +67,20 @@ class OpenAICompatibleProvider(BaseLLMProvider):
         timeout = request.timeout_seconds or self._default_timeout
         payload = self._build_payload(request)
 
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        if self.provider_name == "openrouter":
+            headers["X-Title"] = "Santosh Analytics AI Content Studio"
+            headers["HTTP-Referer"] = "http://localhost:8501"
+
         start = time.perf_counter()
         try:
             async with self._build_client(timeout) as client:
                 response = await client.post(
                     "/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {self._api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    headers=headers,
                     json=payload,
                 )
         except httpx.TimeoutException as exc:

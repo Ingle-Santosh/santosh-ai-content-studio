@@ -1,8 +1,61 @@
 import contextlib
+import re
 
 from content_studio.contracts.script import ScriptSectionItem, ScriptValidationReport
 from content_studio.database.models.enums import ScriptSectionType
 from content_studio.services.web_extractor import normalize_url
+
+_HINGLISH_MARKERS: frozenset[str] = frozenset(
+    {
+        "namaste",
+        "dosto",
+        "aaj",
+        "hum",
+        "aap",
+        "hai",
+        "hain",
+        "mein",
+        "aur",
+        "toh",
+        "kyunki",
+        "isliye",
+        "kaise",
+        "kya",
+        "nahi",
+        "hota",
+        "hoti",
+        "karenge",
+        "samjhenge",
+        "dekhte",
+        "dekhenge",
+        "chaliye",
+        "pehle",
+        "baad",
+        "agar",
+        "jab",
+        "bhi",
+        "yeh",
+        "woh",
+        "sabse",
+        "kaam",
+        "tarah",
+        "liye",
+        "wala",
+        "wali",
+        "karna",
+        "karke",
+        "bata",
+        "sakte",
+    }
+)
+_WORD_RE = re.compile(r"[a-zA-Z]+")
+
+
+def count_hinglish_markers(text: str) -> int:
+    """Count Romanized Hindi conversational tokens present in narration text."""
+    words = _WORD_RE.findall(text.lower())
+    return sum(1 for w in words if w in _HINGLISH_MARKERS)
+
 
 REQUIRED_SECTIONS: tuple[ScriptSectionType, ...] = (
     ScriptSectionType.HOOK,
@@ -22,6 +75,7 @@ def validate_script_sections(
     *,
     target_duration_minutes: int = 15,
     include_code_demo: bool = True,
+    language: str = "Hinglish",
     known_source_urls: set[str] | None = None,
     unsupported_claim_count: int = 0,
 ) -> ScriptValidationReport:
@@ -106,6 +160,15 @@ def validate_script_sections(
             f"{unsupported_claim_count} unsupported/conflicting claim(s) exist in fact-check; "
             "verify narration does not state them as established fact."
         )
+
+    if language.strip().lower() == "hinglish" and sections:
+        all_narration = " ".join(s.narration for s in sections)
+        marker_hits = count_hinglish_markers(all_narration)
+        if marker_hits < 4:
+            warnings.append(
+                "Narration language is set to Hinglish, but the generated script appears to be "
+                "pure English (few/no Romanized Hindi conversational phrases detected)."
+            )
 
     score = 100.0
     score -= len(missing) * 8.0
